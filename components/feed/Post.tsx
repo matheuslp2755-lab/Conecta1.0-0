@@ -5,6 +5,8 @@ import { useTimeAgo } from '../../hooks/useTimeAgo';
 import PostViewsModal from '../post/PostViewsModal';
 import MusicPlayer from './MusicPlayer';
 import Button from '../common/Button';
+import AddCaptionModal from '../post/AddCaptionModal';
+import AddMusicModal from '../post/AddMusicModal';
 
 
 type PostType = {
@@ -396,6 +398,7 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted, playingMusicPostId, se
   const currentUser = auth.currentUser;
   const { t } = useLanguage();
   const { formatTimestamp } = useTimeAgo();
+  const [postData, setPostData] = useState<PostType>(post);
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes.length);
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
@@ -411,6 +414,8 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted, playingMusicPostId, se
   const postRef = useRef<HTMLElement>(null);
   const [isForwardModalOpen, setIsForwardModalOpen] = useState(false);
   const [isDuoPhotoModalOpen, setIsDuoPhotoModalOpen] = useState(false);
+  const [isAddCaptionModalOpen, setIsAddCaptionModalOpen] = useState(false);
+  const [isAddMusicModalOpen, setIsAddMusicModalOpen] = useState(false);
 
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionResults, setMentionResults] = useState<UserSearchResult[]>([]);
@@ -418,15 +423,19 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted, playingMusicPostId, se
   const mentionStartPosition = useRef<number | null>(null);
   const commentInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    setPostData(post);
+    setLikesCount(post.likes.length);
+  }, [post]);
 
   useEffect(() => {
     if (currentUser) {
-        setIsLiked(post.likes.includes(currentUser.uid));
+        setIsLiked(postData.likes.includes(currentUser.uid));
     }
-  }, [post.likes, currentUser]);
+  }, [postData.likes, currentUser]);
 
   useEffect(() => {
-    const commentsRef = collection(db, 'posts', post.id, 'comments');
+    const commentsRef = collection(db, 'posts', postData.id, 'comments');
     const q = query(commentsRef, orderBy('timestamp', 'desc'));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -434,17 +443,17 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted, playingMusicPostId, se
     });
 
     return () => unsubscribe();
-  }, [post.id]);
+  }, [postData.id]);
   
   useEffect(() => {
-    if (!postRef.current || !currentUser || currentUser.uid === post.userId) {
+    if (!postRef.current || !currentUser || currentUser.uid === postData.userId) {
         return;
     }
 
     const observer = new IntersectionObserver(
         async ([entry]) => {
             if (entry.isIntersecting) {
-                const viewRef = doc(db, 'posts', post.id, 'views', currentUser.uid);
+                const viewRef = doc(db, 'posts', postData.id, 'views', currentUser.uid);
                 await setDoc(viewRef, {
                     userId: currentUser.uid,
                     viewedAt: serverTimestamp()
@@ -466,17 +475,17 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted, playingMusicPostId, se
             observer.unobserve(currentPostRef);
         }
     };
-  }, [post.id, post.userId, currentUser]);
+  }, [postData.id, postData.userId, currentUser]);
 
   useEffect(() => {
-    if (!post.musicInfo) return;
+    if (!postData.musicInfo) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setPlayingMusicPostId(post.id);
+          setPlayingMusicPostId(postData.id);
         } else {
-          if (playingMusicPostId === post.id) {
+          if (playingMusicPostId === postData.id) {
             setPlayingMusicPostId(null);
           }
         }
@@ -496,55 +505,61 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted, playingMusicPostId, se
         observer.unobserve(currentPostRef);
       }
     };
-  }, [post.id, post.musicInfo, setPlayingMusicPostId, playingMusicPostId]);
+  }, [postData.id, postData.musicInfo, setPlayingMusicPostId, playingMusicPostId]);
 
   useEffect(() => {
-    const viewsRef = collection(db, 'posts', post.id, 'views');
+    const viewsRef = collection(db, 'posts', postData.id, 'views');
     const unsubscribe = onSnapshot(viewsRef, (snapshot) => {
         setViewsCount(snapshot.size);
     });
 
     return () => unsubscribe();
-  }, [post.id]);
+  }, [postData.id]);
 
   const handleLikeToggle = async () => {
     if (!currentUser) return;
     
-    const postRef = doc(db, 'posts', post.id);
+    const postDocRef = doc(db, 'posts', postData.id);
     const originalIsLiked = isLiked;
-    const originalLikesCount = likesCount;
+    const originalLikes = [...postData.likes];
 
     // Optimistic update
+    const newLikes = originalIsLiked
+        ? postData.likes.filter(uid => uid !== currentUser.uid)
+        : [...postData.likes, currentUser.uid];
+    
     setIsLiked(!originalIsLiked);
-    setLikesCount(originalIsLiked ? originalLikesCount - 1 : originalLikesCount + 1);
+    setLikesCount(newLikes.length);
+    setPostData(prev => ({ ...prev, likes: newLikes }));
 
     try {
         if (originalIsLiked) {
-            await updateDoc(postRef, { likes: arrayRemove(currentUser.uid) });
+            await updateDoc(postDocRef, { likes: arrayRemove(currentUser.uid) });
         } else {
-            await updateDoc(postRef, { likes: arrayUnion(currentUser.uid) });
+            await updateDoc(postDocRef, { likes: arrayUnion(currentUser.uid) });
         }
     } catch (error) {
         console.error("Error toggling like:", error);
         // Revert on error
         setIsLiked(originalIsLiked);
-        setLikesCount(originalLikesCount);
+        setLikesCount(originalLikes.length);
+        setPostData(prev => ({ ...prev, likes: originalLikes }));
     }
   };
 
   const handleDelete = async () => {
-    if (currentUser?.uid !== post.userId) return;
+    if (currentUser?.uid !== postData.userId) return;
 
     setIsDeleting(true);
     try {
-        const imagePath = decodeURIComponent(post.imageUrl.split('/o/')[1].split('?')[0]);
+        const imagePath = decodeURIComponent(postData.imageUrl.split('/o/')[1].split('?')[0]);
         const imageRef = storageRef(storage, imagePath);
-        const postRef = doc(db, 'posts', post.id);
+        const postDocRef = doc(db, 'posts', postData.id);
 
-        await deleteDoc(postRef);
+        await deleteDoc(postDocRef);
         await deleteObject(imageRef);
         
-        onPostDeleted(post.id);
+        onPostDeleted(postData.id);
 
     } catch (error) {
         console.error("Error deleting post:", error);
@@ -572,7 +587,7 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted, playingMusicPostId, se
         const currentUsername = userDoc.data().username;
 
         const batch = writeBatch(db);
-        const commentsRef = collection(db, 'posts', post.id, 'comments');
+        const commentsRef = collection(db, 'posts', postData.id, 'comments');
         const newCommentRef = doc(commentsRef);
         
         batch.set(newCommentRef, {
@@ -599,7 +614,7 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted, playingMusicPostId, se
                             fromUserId: currentUser.uid,
                             fromUsername: currentUsername,
                             fromUserAvatar: currentUser.photoURL,
-                            postId: post.id,
+                            postId: postData.id,
                             commentText: commentText.length > 100 ? `${commentText.substring(0, 97)}...` : commentText,
                             timestamp: serverTimestamp(),
                             read: false,
@@ -622,7 +637,7 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted, playingMusicPostId, se
 
     setIsDeletingComment(true);
     try {
-        const commentRef = doc(db, 'posts', post.id, 'comments', commentToDeleteId);
+        const commentRef = doc(db, 'posts', postData.id, 'comments', commentToDeleteId);
         await deleteDoc(commentRef);
         setIsCommentDeleteConfirmOpen(false);
         setCommentToDeleteId(null);
@@ -719,28 +734,50 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted, playingMusicPostId, se
     <>
         <article ref={postRef} className="bg-white dark:bg-black border border-zinc-300 dark:border-zinc-800 rounded-lg">
         <div className="flex items-center p-3">
-            {post.duoPartner ? (
+            {postData.duoPartner ? (
                 <>
                     <div className="flex -space-x-4">
-                        <img src={post.userAvatar} alt={post.username} className="w-8 h-8 rounded-full object-cover border-2 border-white dark:border-black" />
-                        <img src={post.duoPartner.userAvatar} alt={post.duoPartner.username} className="w-8 h-8 rounded-full object-cover border-2 border-white dark:border-black" />
+                        <img src={postData.userAvatar} alt={postData.username} className="w-8 h-8 rounded-full object-cover border-2 border-white dark:border-black" />
+                        <img src={postData.duoPartner.userAvatar} alt={postData.duoPartner.username} className="w-8 h-8 rounded-full object-cover border-2 border-white dark:border-black" />
                     </div>
-                    <span className="font-semibold text-sm ml-3">{post.username} {t('post.and')} {post.duoPartner.username}</span>
+                    <span className="font-semibold text-sm ml-3">{postData.username} {t('post.and')} {postData.duoPartner.username}</span>
                 </>
             ) : (
                 <>
-                    <img src={post.userAvatar} alt={post.username} className="w-8 h-8 rounded-full object-cover" />
-                    <span className="font-semibold text-sm ml-3">{post.username}</span>
+                    <img src={postData.userAvatar} alt={postData.username} className="w-8 h-8 rounded-full object-cover" />
+                    <span className="font-semibold text-sm ml-3">{postData.username}</span>
                 </>
             )}
-            {currentUser?.uid === post.userId && (
+            {currentUser?.uid === postData.userId && (
                  <div className="ml-auto relative">
                     <button onClick={() => setIsOptionsOpen(prev => !prev)}>
                         <MoreIcon className="w-6 h-6" title={t('post.moreOptions')} />
                     </button>
                     {isOptionsOpen && (
-                         <div className="absolute right-0 top-full mt-2 w-40 bg-white dark:bg-zinc-950 rounded-md shadow-lg border dark:border-zinc-800 z-10 py-1">
-                            {!post.duoPartner && !post.pendingDuoPartner && (
+                         <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-zinc-950 rounded-md shadow-lg border dark:border-zinc-800 z-10 py-1">
+                            {!postData.caption?.trim() && (
+                                <button
+                                    onClick={() => {
+                                        setIsAddCaptionModalOpen(true);
+                                        setIsOptionsOpen(false);
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                                >
+                                    {t('post.addCaption')}
+                                </button>
+                            )}
+                            {!postData.musicInfo && (
+                                <button
+                                    onClick={() => {
+                                        setIsAddMusicModalOpen(true);
+                                        setIsOptionsOpen(false);
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                                >
+                                    {t('post.addMusic')}
+                                </button>
+                            )}
+                            {!postData.duoPartner && !postData.pendingDuoPartner && (
                                 <button
                                     onClick={() => {
                                         setIsDuoPhotoModalOpen(true);
@@ -767,10 +804,10 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted, playingMusicPostId, se
         </div>
         
         <div>
-            <img src={post.imageUrl} alt="Post content" className="w-full object-cover" />
+            <img src={postData.imageUrl} alt="Post content" className="w-full object-cover" />
         </div>
         
-        {post.musicInfo && <MusicPlayer musicInfo={post.musicInfo} isPlaying={playingMusicPostId === post.id} />}
+        {postData.musicInfo && <MusicPlayer musicInfo={postData.musicInfo} isPlaying={playingMusicPostId === postData.id} />}
 
         <div className="p-4">
             <div className="flex items-center gap-4 mb-2">
@@ -790,7 +827,7 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted, playingMusicPostId, se
                     {(viewsCount > 0) && (
                         <>
                             <span className="text-zinc-400 dark:text-zinc-600">•</span>
-                            {currentUser?.uid === post.userId ? (
+                            {currentUser?.uid === postData.userId ? (
                                 <button onClick={() => setIsViewsModalOpen(true)} className="hover:underline">
                                     {viewsCount.toLocaleString()} {viewsCount === 1 ? t('post.viewSingular') : t('post.viewPlural')}
                                 </button>
@@ -800,17 +837,19 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted, playingMusicPostId, se
                         </>
                     )}
                 </div>
-                <p>
-                    <span className="font-semibold mr-2">{post.username}</span>
-                    {renderTextWithMentions(post.caption)}
-                </p>
+                {postData.caption && (
+                    <p>
+                        <span className="font-semibold mr-2">{postData.username}</span>
+                        {renderTextWithMentions(postData.caption)}
+                    </p>
+                )}
                  {comments.slice(0, 2).reverse().map(comment => (
                     <div key={comment.id} className="flex items-center justify-between group">
                          <p className="flex-grow pr-2">
                              <span className="font-semibold mr-2">{comment.username}</span>
                              {renderTextWithMentions(comment.text)}
                          </p>
-                         {(currentUser?.uid === comment.userId || currentUser?.uid === post.userId) && (
+                         {(currentUser?.uid === comment.userId || currentUser?.uid === postData.userId) && (
                               <button 
                                  onClick={() => {
                                      setCommentToDeleteId(comment.id);
@@ -832,7 +871,7 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted, playingMusicPostId, se
                     {t('post.viewAllComments', { count: comments.length })}
                 </p>
             )}
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 uppercase mt-2">{formatTimestamp(post.timestamp)}</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 uppercase mt-2">{formatTimestamp(postData.timestamp)}</p>
         </div>
 
         <div className="relative border-t border-zinc-200 dark:border-zinc-800 px-4 py-2">
@@ -875,19 +914,38 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted, playingMusicPostId, se
         <ForwardPostModal
             isOpen={isForwardModalOpen}
             onClose={() => setIsForwardModalOpen(false)}
-            post={post}
+            post={postData}
         />
         
         <DuoPhotoModal
             isOpen={isDuoPhotoModalOpen}
             onClose={() => setIsDuoPhotoModalOpen(false)}
-            post={post}
+            post={postData}
         />
 
         <PostViewsModal
             isOpen={isViewsModalOpen}
             onClose={() => setIsViewsModalOpen(false)}
-            postId={post.id}
+            postId={postData.id}
+        />
+        
+        <AddCaptionModal
+            isOpen={isAddCaptionModalOpen}
+            onClose={() => setIsAddCaptionModalOpen(false)}
+            postId={postData.id}
+            onCaptionSaved={(newCaption) => {
+                setPostData(prev => ({ ...prev, caption: newCaption }));
+                setIsAddCaptionModalOpen(false);
+            }}
+        />
+        <AddMusicModal
+            isOpen={isAddMusicModalOpen}
+            onClose={() => setIsAddMusicModalOpen(false)}
+            postId={postData.id}
+            onMusicAdded={(newMusicInfo) => {
+                setPostData(prev => ({ ...prev, musicInfo: newMusicInfo }));
+                setIsAddMusicModalOpen(false);
+            }}
         />
 
         {isCommentDeleteConfirmOpen && (

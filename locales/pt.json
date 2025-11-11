@@ -87,7 +87,9 @@
     "viewedBy": "Visto por",
     "noViews": "Nenhuma visualização ainda.",
     "duoPhoto": "Foto em Dupla",
-    "and": "e"
+    "and": "e",
+    "addCaption": "Adicionar Legenda",
+    "addMusic": "Adicionar Música"
   },
   "time": {
     "seconds": "há {count}s",
@@ -290,5 +292,15 @@
     "successMessage": "Verifique seu e-mail para encontrar um link para redefinir sua senha.",
     "errorNotFound": "E-mail não encontrado. Verifique e tente novamente.",
     "genericError": "Falha ao enviar o link de redefinição. Por favor, tente novamente mais tarde."
+  },
+  "addCaptionModal": {
+    "title": "Adicionar Legenda",
+    "captionLabel": "Escreva uma legenda...",
+    "save": "Salvar",
+    "saving": "Salvando...",
+    "error": "Falha ao salvar a legenda. Por favor, tente novamente."
+  },
+  "addMusicModal": {
+    "title": "Adicionar Música"
   }
 }

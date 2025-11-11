@@ -89,7 +89,9 @@ const messages = {
     "viewSingular": "visualização",
     "viewPlural": "visualizações",
     "viewedBy": "Visto por",
-    "noViews": "Nenhuma visualização ainda."
+    "noViews": "Nenhuma visualização ainda.",
+    "addCaption": "Adicionar Legenda",
+    "addMusic": "Adicionar Música"
   },
   "time": {
     "seconds": "há {count}s",

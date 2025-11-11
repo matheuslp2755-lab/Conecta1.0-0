@@ -86,7 +86,9 @@
     "viewedBy": "Viewed by",
     "noViews": "No views yet.",
     "duoPhoto": "Duo Photo",
-    "and": "and"
+    "and": "and",
+    "addCaption": "Add Caption",
+    "addMusic": "Add Music"
   },
   "time": {
     "seconds": "{count}s ago",
@@ -285,5 +287,15 @@
     "successMessage": "Check your email for a link to reset your password.",
     "errorNotFound": "Email not found. Please check and try again.",
     "genericError": "Failed to send reset link. Please try again later."
+  },
+  "addCaptionModal": {
+    "title": "Add Caption",
+    "captionLabel": "Write a caption...",
+    "save": "Save",
+    "saving": "Saving...",
+    "error": "Failed to save caption. Please try again."
+  },
+  "addMusicModal": {
+    "title": "Add Music"
   }
 }
