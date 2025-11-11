@@ -123,7 +123,11 @@
     "privateAccountInfo": "Only your followers will be able to see your photos and videos.",
     "submit": "Submit",
     "submitting": "Submitting...",
-    "updateError": "Failed to update profile. Please try again."
+    "updateError": "Failed to update profile. Please try again.",
+    "profileMusic": "Profile Music",
+    "noProfileMusic": "No music selected.",
+    "changeMusic": "Change music",
+    "removeMusic": "Remove"
   },
   "createPost": {
     "title": "Create new post",
@@ -145,7 +149,8 @@
     "search": "Search",
     "searching": "Searching...",
     "musicNoResults": "No songs found.",
-    "selectMusic": "Select"
+    "selectMusic": "Select",
+    "publishError": "Failed to create post. Please try again."
   },
   "messages": {
     "title": "Messages",
@@ -178,7 +183,25 @@
     },
     "forwardedPost": "Forwarded a post",
     "anonymousModeOn": "Go anonymous",
-    "anonymousModeOff": "Go online"
+    "anonymousModeOff": "Go online",
+    "deleteConversationTitle": "Delete Conversation?",
+    "deleteConversationBody": "This will permanently delete the conversation for everyone and cannot be undone.",
+    "deleteConversationConfirm": "Delete",
+    "recordingError": "Could not start recording. Please check microphone permissions.",
+    "diariesTitle": "Notes",
+    "addNote": "Your Note",
+    "replyToNote": "Reply to {username}'s note...",
+    "notePlaceholder": "Your note...",
+    "viewNote": "View note"
+  },
+  "diary": {
+    "title": "Diary",
+    "publish": "Publish",
+    "publishing": "Publishing...",
+    "placeholder": "What's on your mind today?",
+    "empty": "The diary is empty.",
+    "emptySuggestion": "Follow people to see their diary entries here or write your own!",
+    "alreadyPosted": "You've already posted in your diary today. Come back tomorrow!"
   },
   "forwardModal": {
     "title": "Forward to",
@@ -197,7 +220,8 @@
     "noFollowing": "You aren't following anyone to invite.",
     "requestSent": "Request sent!",
     "alreadyPartnered": "This post already has a duo partner.",
-    "requestPending": "There is already a pending request for this post."
+    "requestPending": "There is already a pending request for this post.",
+    "requestError": "Failed to send request."
   },
   "crystal": {
     "formed": "💎 A new Connection Crystal was formed!",
@@ -209,7 +233,16 @@
         "rachado": "Cracked"
     },
     "title": "Connection Crystal: {status}",
-    "streak": "{streak} day interaction streak"
+    "streak": "{streak} day interaction streak",
+    "shareTitle": "Connection Streak",
+    "shareAction": "Share to Pulse",
+    "publishing": "Publishing...",
+    "shareError": "Failed to publish Pulse.",
+    "canvasError": "Failed to generate image.",
+    "imageLoadError": "Failed to load profile pictures.",
+    "streakDays": "{streak} day connection streak",
+    "vibe": "— the vibe continues 💬🔥 —",
+    "watermark": "💎 Conecta+"
   },
   "createPulse": {
     "title": "Create new pulse",
@@ -297,5 +330,13 @@
   },
   "addMusicModal": {
     "title": "Add Music"
+  },
+  "musicSearch": {
+    "fetchError": "Failed to fetch music",
+    "searchError": "An error occurred during search."
+  },
+  "musicPlayer": {
+    "play": "Play",
+    "pause": "Pause"
   }
 }

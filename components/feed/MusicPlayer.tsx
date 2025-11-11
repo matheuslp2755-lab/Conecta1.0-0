@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface MusicInfo {
   nome: string;
@@ -27,6 +28,7 @@ const PauseIcon: React.FC<{className?: string}> = ({ className }) => (
 
 
 const MusicPlayer: React.FC<MusicPlayerProps> = ({ musicInfo, isPlaying }) => {
+    const { t } = useLanguage();
     const audioRef = useRef<HTMLAudioElement>(null);
     const [isAudioPlaying, setIsAudioPlaying] = useState(false);
     const [duration, setDuration] = useState(0);
@@ -90,7 +92,7 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ musicInfo, isPlaying }) => {
                     <button 
                         onClick={togglePlayPause} 
                         className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 text-white rounded-md opacity-0 hover:opacity-100 focus:opacity-100 transition-opacity"
-                        aria-label={isAudioPlaying ? "Pause" : "Play"}
+                        aria-label={isAudioPlaying ? t('musicPlayer.pause') : t('musicPlayer.play')}
                     >
                        {isAudioPlaying ? <PauseIcon className="w-8 h-8" /> : <PlayIcon className="w-8 h-8" />}
                     </button>

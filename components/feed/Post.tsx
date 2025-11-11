@@ -302,7 +302,7 @@ const DuoPhotoModal: React.FC<DuoPhotoModalProps> = ({ isOpen, onClose, post }) 
             onClose();
         } catch (error) {
             console.error("Error sending duo request:", error);
-            setError('Failed to send request.');
+            setError(t('duoModal.requestError'));
         } finally {
             setIsSending(false);
         }

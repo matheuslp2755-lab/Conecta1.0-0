@@ -126,7 +126,11 @@ const messages = {
     "privateAccountInfo": "Apenas seus seguidores poderão ver suas fotos e vídeos.",
     "submit": "Enviar",
     "submitting": "Enviando...",
-    "updateError": "Falha ao atualizar o perfil. Por favor, tente novamente."
+    "updateError": "Falha ao atualizar o perfil. Por favor, tente novamente.",
+    "profileMusic": "Música do Perfil",
+    "noProfileMusic": "Nenhuma música selecionada.",
+    "changeMusic": "Alterar música",
+    "removeMusic": "Remover"
   },
   "createPost": {
     "title": "Criar nova publicação",
@@ -148,7 +152,8 @@ const messages = {
     "search": "Buscar",
     "searching": "Buscando...",
     "musicNoResults": "Nenhuma música encontrada.",
-    "selectMusic": "Selecionar música"
+    "selectMusic": "Selecionar música",
+    "publishError": "Falha ao criar a publicação. Por favor, tente novamente."
   },
   "messages": {
     "title": "Mensagens",
@@ -181,7 +186,25 @@ const messages = {
     },
     "forwardedPost": "Encaminhou uma publicação",
     "anonymousModeOn": "Ficar anônimo",
-    "anonymousModeOff": "Ficar online"
+    "anonymousModeOff": "Ficar online",
+    "deleteConversationTitle": "Excluir Conversa?",
+    "deleteConversationBody": "Isso excluirá permanentemente a conversa para todos e não poderá ser desfeito.",
+    "deleteConversationConfirm": "Excluir",
+    "recordingError": "Não foi possível iniciar a gravação. Verifique as permissões do microfone.",
+    "diariesTitle": "Notas",
+    "addNote": "Sua Nota",
+    "replyToNote": "Responder à nota de {username}...",
+    "notePlaceholder": "Sua nota...",
+    "viewNote": "Ver nota"
+  },
+  "diary": {
+    "title": "Diário",
+    "publish": "Publicar",
+    "publishing": "Publicando...",
+    "placeholder": "No que você está pensando hoje?",
+    "empty": "O diário está vazio.",
+    "emptySuggestion": "Siga pessoas para ver as entradas do diário delas aqui ou escreva a sua!",
+    "alreadyPosted": "Você já publicou no diário hoje. Volte amanhã!"
   },
   "forwardModal": {
     "title": "Encaminhar para",
@@ -200,7 +223,8 @@ const messages = {
     "noFollowing": "Você não segue ninguém para convidar.",
     "requestSent": "Solicitação enviada!",
     "alreadyPartnered": "Esta publicação já tem uma dupla.",
-    "requestPending": "Já existe uma solicitação pendente para esta publicação."
+    "requestPending": "Já existe uma solicitação pendente para esta publicação.",
+    "requestError": "Falha ao enviar solicitação."
   },
   "crystal": {
     "formed": "💎 Um novo Cristal de Conexão foi formado!",
@@ -212,7 +236,16 @@ const messages = {
       "rachado": "Rachado"
     },
     "title": "Cristal de Conexão: {status}",
-    "streak": "{streak} dias de interação seguida"
+    "streak": "{streak} dias de interação seguida",
+    "shareTitle": "Sequência Conecta",
+    "shareAction": "Compartilhar no Pulse",
+    "publishing": "Publicando...",
+    "shareError": "Falha ao publicar o Pulse.",
+    "canvasError": "Falha ao gerar a imagem.",
+    "imageLoadError": "Falha ao carregar as fotos de perfil.",
+    "streakDays": "{streak} dias de conexão",
+    "vibe": "— a vibe continua 💬🔥 —",
+    "watermark": "💎 Conecta+"
   },
   "createPulse": {
     "title": "Criar novo pulso",
@@ -261,6 +294,14 @@ const messages = {
       "contact": "Carregamento de contatos e não usuários",
       "verified": "Meta Verified"
     }
+  },
+  "musicSearch": {
+    "fetchError": "Falha ao buscar músicas",
+    "searchError": "Ocorreu um erro durante a busca."
+  },
+  "musicPlayer": {
+    "play": "Tocar",
+    "pause": "Pausar"
   }
 };
 

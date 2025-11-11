@@ -219,7 +219,7 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
                                             </div>
                                         </div>
                                         <div className="flex-grow overflow-y-auto border border-zinc-200 dark:border-zinc-800 rounded-md">
-                                            {loadingFollowers ? <p className="p-4 text-center text-sm text-zinc-500">Loading...</p> : 
+                                            {loadingFollowers ? <p className="p-4 text-center text-sm text-zinc-500">{t('messages.loading')}</p> : 
                                             filteredFollowers.length > 0 ? (
                                                 filteredFollowers.map(follower => (
                                                     <label key={follower.id} className="flex items-center p-2 gap-3 hover:bg-zinc-50 dark:hover:bg-zinc-900 cursor-pointer">

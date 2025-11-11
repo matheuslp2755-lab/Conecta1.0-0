@@ -53,7 +53,7 @@ const MusicSearch: React.FC<MusicSearchProps> = ({ onSelectMusic, onBack }) => {
           setError(t('createPost.musicNoResults'));
       }
     } catch (err) {
-      setError('An error occurred during search.');
+      setError(t('musicSearch.searchError'));
       console.error(err);
     } finally {
       setLoading(false);

@@ -23,6 +23,7 @@ import ConnectionCrystal from './ConnectionCrystal';
 import OnlineIndicator from '../common/OnlineIndicator';
 import { useLanguage } from '../../context/LanguageContext';
 import { useCall } from '../../context/CallContext';
+import ConnectionStreakShareModal from './ConnectionStreakShareModal';
 
 interface ForwardedPostProps {
   content: {
@@ -269,6 +270,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, isCurre
     const [recordingTime, setRecordingTime] = useState(0);
     const { startCall, activeCall } = useCall();
     const [isCallDropdownOpen, setIsCallDropdownOpen] = useState(false);
+    const [isStreakModalOpen, setIsStreakModalOpen] = useState(false);
 
     type AnimationState = 'idle' | 'forming' | 'settling';
     const [animationState, setAnimationState] = useState<AnimationState>('idle');
@@ -381,12 +383,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, isCurre
                     }
                 }
 
-
-                if (data.crystal) {
-                    if (data.crystal.streak < 2) {
-                        setCrystalData(null);
-                        return;
-                    }
+                if (data.crystal && data.crystal.lastInteractionAt && data.crystal.streak >= 2) {
                     const lastInteractionDate = data.crystal.lastInteractionAt.toDate();
                     const now = new Date();
                     const diffHours = (now.getTime() - lastInteractionDate.getTime()) / (1000 * 60 * 60);
@@ -559,7 +556,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, isCurre
             }, 1000);
         } catch (error) {
             console.error("Error starting recording:", error);
-            setUploadError("Could not start recording. Please check microphone permissions.");
+            setUploadError(t('messages.recordingError'));
         }
     };
 
@@ -624,7 +621,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, isCurre
             
             let crystalUpdate: { [key: string]: any } = {};
             
-            if (currentData?.crystal) {
+            if (currentData?.crystal && currentData.crystal.lastInteractionAt) {
                 const lastInteractionDate = currentData.crystal.lastInteractionAt.toDate();
                 const now = new Date();
                 let newStreak = currentData.crystal.streak;
@@ -774,17 +771,22 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, isCurre
                     <div className="flex-grow">
                         <p className="font-semibold">{otherUser.username}</p>
                         {crystalData && (
-                            <div 
-                                ref={crystalHeaderRef} 
-                                className={`flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 transition-opacity duration-300 ${animationState !== 'idle' ? 'opacity-0' : 'opacity-100'}`} 
+                            <button 
+                                onClick={() => setIsStreakModalOpen(true)} 
+                                className="rounded-md -ml-1 p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                                 title={t('crystal.title', { status: getCrystalStatusText(crystalData.level) })}
                             >
-                                <ConnectionCrystal level={crystalData.level} className="w-4 h-4" />
-                                <span>{getCrystalStatusText(crystalData.level)}</span>
-                                {crystalData.streak > 1 && (
-                                    <span title={t('crystal.streak', { streak: crystalData.streak })}>🔥 {crystalData.streak}</span>
-                                )}
-                            </div>
+                                <div 
+                                    ref={crystalHeaderRef} 
+                                    className={`flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 transition-opacity duration-300 ${animationState !== 'idle' ? 'opacity-0' : 'opacity-100'}`} 
+                                >
+                                    <ConnectionCrystal level={crystalData.level} className="w-4 h-4" />
+                                    <span>{getCrystalStatusText(crystalData.level)}</span>
+                                    {crystalData.streak > 1 && (
+                                        <span title={t('crystal.streak', { streak: crystalData.streak })}>🔥 {crystalData.streak}</span>
+                                    )}
+                                </div>
+                            </button>
                         )}
                     </div>
                     <div ref={callDropdownRef} className="ml-auto relative">
@@ -1061,6 +1063,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, isCurre
                         {animationMessage}
                     </p>
                 </div>
+            )}
+            {otherUser && crystalData && currentUser && (
+                <ConnectionStreakShareModal
+                    isOpen={isStreakModalOpen}
+                    onClose={() => setIsStreakModalOpen(false)}
+                    crystalData={crystalData}
+                    currentUser={currentUser}
+                    otherUser={otherUser}
+                    onPulseCreated={() => {
+                        setIsStreakModalOpen(false);
+                    }}
+                />
             )}
         </div>
     );

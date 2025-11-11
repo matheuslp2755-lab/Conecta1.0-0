@@ -29,6 +29,7 @@ import OnlineIndicator from '../common/OnlineIndicator';
 import PulseViewerModal from '../pulse/PulseViewerModal';
 import { useLanguage } from '../../context/LanguageContext';
 import { useCall } from '../../context/CallContext';
+import ProfileMusicPlayer from './ProfileMusicPlayer';
 
 const Spinner: React.FC = () => (
     <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-sky-500"></div>
@@ -60,6 +61,13 @@ interface UserProfileProps {
     onStartMessage: (targetUser: { id: string, username: string, avatar: string }) => void;
 }
 
+type MusicInfo = {
+    nome: string;
+    artista: string;
+    capa: string;
+    preview: string;
+};
+
 type ProfileUserData = {
     username: string;
     avatar: string;
@@ -67,6 +75,7 @@ type ProfileUserData = {
     isPrivate?: boolean;
     lastSeen?: { seconds: number; nanoseconds: number };
     isAnonymous?: boolean;
+    profileMusic?: MusicInfo;
 };
 
 type Post = {
@@ -355,7 +364,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
         console.log("Background avatar update finished.");
     };
 
-    const handleProfileUpdate = async ({ username, bio, avatarFile, isPrivate }: { username: string; bio: string; avatarFile: File | null; isPrivate: boolean; }) => {
+    const handleProfileUpdate = async ({ username, bio, avatarFile, isPrivate, profileMusic }: { username: string; bio: string; avatarFile: File | null; isPrivate: boolean; profileMusic: MusicInfo | null; }) => {
         const userToUpdate = auth.currentUser;
         if (!userToUpdate) return;
         setIsUpdating(true);
@@ -385,6 +394,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
             if (isPrivate !== (user?.isPrivate || false)) {
                 firestoreUpdates.isPrivate = isPrivate;
             }
+            
+            firestoreUpdates.profileMusic = profileMusic;
+
 
             if (Object.keys(firestoreUpdates).length > 0) {
                 await updateDoc(userDocRef, firestoreUpdates);
@@ -402,13 +414,6 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
                 });
             }
 
-            // The onSnapshot listener will update the user state automatically.
-            // This local setUser can be removed to avoid potential race conditions,
-            // but it provides a slightly faster UI update.
-            setUser(prev => {
-                if (!prev) return null;
-                return { ...prev, username, bio, isPrivate, avatar: newAvatarUrl || prev.avatar };
-            });
             window.dispatchEvent(new CustomEvent('profileUpdated'));
             setIsEditModalOpen(false);
         } catch (error) {
@@ -573,11 +578,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
                         <span><span className="font-semibold">{stats.followers}</span> {t('profile.followers')}</span>
                         <span><span className="font-semibold">{stats.following}</span> {t('profile.followingCount')}</span>
                     </div>
-                     {user.bio && (
-                        <div className="text-sm pt-2 text-center sm:text-left">
-                            <p className="whitespace-pre-wrap">{user.bio}</p>
-                        </div>
-                    )}
+                    <div className="text-sm pt-2 text-center sm:text-left w-full">
+                        {user.profileMusic && <ProfileMusicPlayer musicInfo={user.profileMusic} />}
+                        {user.bio && (
+                            <p className="whitespace-pre-wrap mt-2">{user.bio}</p>
+                        )}
+                    </div>
                 </div>
             </header>
             {renderContent()}
