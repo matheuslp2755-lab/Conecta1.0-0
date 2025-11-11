@@ -356,17 +356,18 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
     };
 
     const handleProfileUpdate = async ({ username, bio, avatarFile, isPrivate }: { username: string; bio: string; avatarFile: File | null; isPrivate: boolean; }) => {
-        if (!currentUser) return;
+        const userToUpdate = auth.currentUser;
+        if (!userToUpdate) return;
         setIsUpdating(true);
         
         try {
-            const userDocRef = doc(db, 'users', currentUser.uid);
+            const userDocRef = doc(db, 'users', userToUpdate.uid);
             const firestoreUpdates: { [key: string]: any } = {};
             const authUpdates: { displayName?: string; photoURL?: string } = {};
             let newAvatarUrl: string | undefined = undefined;
 
             if (avatarFile) {
-                const avatarStorageRef = storageRef(storage, `avatars/${currentUser.uid}/${Date.now()}-${avatarFile.name}`);
+                const avatarStorageRef = storageRef(storage, `avatars/${userToUpdate.uid}/${Date.now()}-${avatarFile.name}`);
                 await uploadBytes(avatarStorageRef, avatarFile);
                 newAvatarUrl = await getDownloadURL(avatarStorageRef);
                 firestoreUpdates.avatar = newAvatarUrl;
@@ -390,17 +391,20 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
             }
 
             if (Object.keys(authUpdates).length > 0) {
-                await updateProfile(currentUser, authUpdates);
+                await updateProfile(userToUpdate, authUpdates);
+                await userToUpdate.reload(); // Force refresh of the user object
             }
 
             if (newAvatarUrl) {
                 // Fire and forget the background update.
-                // This makes the UI feel instant and lets the updates happen reliably.
-                updateDenormalizedAvatar(currentUser.uid, newAvatarUrl).catch(e => {
+                updateDenormalizedAvatar(userToUpdate.uid, newAvatarUrl).catch(e => {
                     console.error("A failure occurred during the background avatar update process:", e);
                 });
             }
 
+            // The onSnapshot listener will update the user state automatically.
+            // This local setUser can be removed to avoid potential race conditions,
+            // but it provides a slightly faster UI update.
             setUser(prev => {
                 if (!prev) return null;
                 return { ...prev, username, bio, isPrivate, avatar: newAvatarUrl || prev.avatar };
