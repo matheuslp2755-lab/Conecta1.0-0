@@ -21,7 +21,7 @@ const AppContent: React.FC = () => {
   const { setIncomingCall, activeCall } = useCall();
 
   useEffect(() => {
-    const welcomeKey = 'hasSeenWelcome_VibeMP';
+    const welcomeKey = 'hasSeenWelcome_Conecta+';
     const hasSeen = localStorage.getItem(welcomeKey);
     if (!hasSeen) {
       setShowWelcomeAnimation(true);
@@ -32,7 +32,7 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser && !prevUser.current) {
-        setToastMessage(`Seja bem-vindo(a) ao VibeMP`);
+        setToastMessage(`Seja bem-vindo(a) ao Conecta+`);
         setShowToast(true);
         setTimeout(() => {
           setShowToast(false);

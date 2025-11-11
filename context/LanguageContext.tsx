@@ -11,7 +11,7 @@ const messages = {
     "user": "Usuário"
   },
   "login": {
-    "title": "💎 VibeMP",
+    "title": "💎 Conecta+",
     "emailLabel": "Endereço de e-mail",
     "passwordLabel": "Senha",
     "loginButton": "Entrar",
@@ -25,7 +25,7 @@ const messages = {
     "googlePlayAlt": "Disponível no Google Play"
   },
   "signup": {
-    "title": "💎 VibeMP",
+    "title": "💎 Conecta+",
     "subtitle": "Cadastre-se para ver fotos e vídeos dos seus amigos.",
     "emailLabel": "Endereço de e-mail",
     "usernameLabel": "Nome de usuário",
@@ -39,7 +39,7 @@ const messages = {
     "genericError": "Falha ao criar uma conta. Por favor, tente novamente."
   },
   "header": {
-    "title": "💎 VibeMP",
+    "title": "💎 Conecta+",
     "searchPlaceholder": "Pesquisar",
     "noResults": "Nenhum resultado encontrado.",
     "following": "Seguindo",
@@ -63,7 +63,7 @@ const messages = {
     "decline": "Recusar"
   },
   "feed": {
-    "welcome": "Bem-vindo ao VibeMP",
+    "welcome": "Bem-vindo ao Conecta+",
     "empty": "Parece que seu feed está vazio.",
     "emptySuggestion": "Use a barra de pesquisa para encontrar e seguir seus amigos para ver as fotos e vídeos deles."
   },
@@ -239,11 +239,11 @@ const messages = {
     "viewPulse": "Ver o pulso de {username}"
   },
   "welcome": {
-    "title": "Bem vindo ao VibeMP"
+    "title": "Bem vindo ao Conecta+"
   },
   "footer": {
     "language": "Português (Brasil)",
-    "copyright": "© {year} VibeMP da Meta",
+    "copyright": "© {year} Conecta+ da Meta",
     "links": {
       "meta": "Meta",
       "about": "Sobre",
