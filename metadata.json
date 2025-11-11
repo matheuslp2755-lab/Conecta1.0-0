@@ -1,0 +1,8 @@
+{
+  "name": "VibeMP25",
+  "description": "A visually appealing social media application called VibeMP, inspired by Instagram, built with React, TypeScript, and Tailwind CSS.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ]
+}
