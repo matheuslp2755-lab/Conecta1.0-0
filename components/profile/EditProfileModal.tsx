@@ -98,7 +98,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, us
                                 type="file"
                                 onChange={handleAvatarChange}
                                 className="hidden"
-                                accept="image/png, image/jpeg"
+                                accept="image/*"
                             />
                           </label>
                       </div>
