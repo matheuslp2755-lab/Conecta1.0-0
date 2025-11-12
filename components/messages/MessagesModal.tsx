@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import ConversationList from './ConversationList';
 import ChatWindow from './ChatWindow';
 import NewMessage from './NewMessage';
-import { auth, db, doc, getDoc, setDoc, serverTimestamp, updateDoc, onSnapshot, collection, addDoc, query, where, orderBy, limit, getDocs } from '../../firebase';
+import { auth, db, doc, getDoc, setDoc, serverTimestamp, updateDoc, onSnapshot, collection, addDoc, query, where, orderBy, limit, getDocs, deleteDoc } from '../../firebase';
 import { useLanguage } from '../../context/LanguageContext';
 import TextAreaInput from '../common/TextAreaInput';
 import Button from '../common/Button';
 import { useTimeAgo } from '../../hooks/useTimeAgo';
+import MusicSearch from '../post/MusicSearch';
+import MusicPlayer from '../feed/MusicPlayer';
 
 interface MessagesModalProps {
   isOpen: boolean;
@@ -15,6 +17,13 @@ interface MessagesModalProps {
   initialConversationId: string | null;
 }
 
+type MusicInfo = {
+  nome: string;
+  artista: string;
+  capa: string;
+  preview: string;
+};
+
 type DiaryEntry = {
     id: string;
     userId: string;
@@ -22,6 +31,7 @@ type DiaryEntry = {
     userAvatar: string;
     text: string;
     createdAt: { seconds: number; nanoseconds: number };
+    musicInfo?: MusicInfo;
 };
 
 const XIcon: React.FC<{className?: string}> = ({ className }) => (
@@ -72,7 +82,7 @@ const DiaryCarousel: React.FC<{
             <div className="flex items-start gap-4 overflow-x-auto pb-2 -mb-2">
                 <div 
                     className="flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0 group text-center"
-                    onClick={onAddDiary}
+                    onClick={myDiary ? () => onViewDiary(myDiary) : onAddDiary}
                 >
                     <div className="w-16 h-16 rounded-full p-0.5 bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center relative">
                         <img 
@@ -97,10 +107,20 @@ const DiaryCarousel: React.FC<{
                         className="flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0 group text-center"
                         onClick={() => onViewDiary(diary)}
                     >
-                        <div className="w-16 h-16 rounded-full p-0.5 bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500">
-                           <div className="bg-white dark:bg-black p-0.5 rounded-full h-full w-full">
-                                <img src={diary.userAvatar} alt={diary.username} className="w-full h-full rounded-full object-cover"/>
-                           </div>
+                        <div className="relative w-16 h-16">
+                            <div className="w-full h-full rounded-full p-0.5 bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500">
+                               <div className="bg-white dark:bg-black p-0.5 rounded-full h-full w-full">
+                                    <img src={diary.userAvatar} alt={diary.username} className="w-full h-full rounded-full object-cover"/>
+                               </div>
+                            </div>
+                            {diary.musicInfo && (
+                                <div className="absolute bottom-0 right-0 bg-black/60 rounded-full p-1 border-2 border-white dark:border-zinc-800">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M18 3a1 1 0 00-1.447-.894L4 6.424V20.5a1 1 0 001.5 1.5h.01L17 18.424V4.5a1 1 0 00-1-1.5zM6 8.118l8-2.436v8.664l-8 2.436V8.118z" />
+                                        <path d="M11 5.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+                                    </svg>
+                                </div>
+                            )}
                         </div>
                         <p className="text-xs truncate w-16">{diary.username}</p>
                         <p className="text-xs text-zinc-500">{getTimeRemaining(diary.createdAt)}</p>
@@ -114,7 +134,6 @@ const DiaryCarousel: React.FC<{
 
 const MessagesModal: React.FC<MessagesModalProps> = ({ isOpen, onClose, initialTargetUser, initialConversationId }) => {
     const { t } = useLanguage();
-    const { formatTimestamp } = useTimeAgo();
     const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
     const [view, setView] = useState<'list' | 'new'>('list');
     const [isAnonymous, setIsAnonymous] = useState(false);
@@ -125,8 +144,39 @@ const MessagesModal: React.FC<MessagesModalProps> = ({ isOpen, onClose, initialT
     const [followedDiaries, setFollowedDiaries] = useState<DiaryEntry[]>([]);
     const [diariesLoading, setDiariesLoading] = useState(true);
     const [viewingDiary, setViewingDiary] = useState<DiaryEntry | null>(null);
+    const [selectedMusic, setSelectedMusic] = useState<MusicInfo | null>(null);
+    const [showMusicSearch, setShowMusicSearch] = useState(false);
+    const [editingDiary, setEditingDiary] = useState<DiaryEntry | null>(null);
+    const [confirmDeleteDiary, setConfirmDeleteDiary] = useState<DiaryEntry | null>(null);
+    // FIX: Add isMusicMuted state to manage music player mute status
+    const [isMusicMuted, setIsMusicMuted] = useState(false);
 
     const currentUser = auth.currentUser;
+
+    useEffect(() => {
+        if (!isOpen) {
+            setActiveConversationId(null);
+            setView('list');
+            setNewDiaryEntry('');
+            setSelectedMusic(null);
+            setShowMusicSearch(false);
+            setViewingDiary(null);
+            setEditingDiary(null);
+            setConfirmDeleteDiary(null);
+            return;
+        }
+
+        if (initialConversationId) {
+            setActiveConversationId(initialConversationId);
+            return;
+        }
+
+        if (initialTargetUser) {
+            startConversationWithUser(initialTargetUser);
+        } else {
+            setActiveConversationId(null);
+        }
+    }, [isOpen, initialTargetUser, initialConversationId]);
 
     useEffect(() => {
         if (!isOpen || !currentUser) return;
@@ -147,8 +197,13 @@ const MessagesModal: React.FC<MessagesModalProps> = ({ isOpen, onClose, initialT
         const unsubDiary = onSnapshot(q, (snapshot) => {
             if (!snapshot.empty) {
                 const latestDiary = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as DiaryEntry;
-                setMyLatestDiary(latestDiary);
-                setHasPostedToday(isToday(latestDiary.createdAt));
+                if (!isToday(latestDiary.createdAt)) {
+                   setMyLatestDiary(null);
+                   setHasPostedToday(false);
+                } else {
+                   setMyLatestDiary(latestDiary);
+                   setHasPostedToday(true);
+                }
             } else {
                 setMyLatestDiary(null);
                 setHasPostedToday(false);
@@ -216,7 +271,11 @@ const MessagesModal: React.FC<MessagesModalProps> = ({ isOpen, onClose, initialT
             setDiariesLoading(false);
         };
 
-        fetchDiaries().catch(console.error);
+        const unsub = onSnapshot(query(collection(db, 'diaries')), () => {
+            fetchDiaries().catch(console.error);
+        });
+
+        return () => unsub();
 
     }, [isOpen, currentUser]);
 
@@ -275,26 +334,7 @@ const MessagesModal: React.FC<MessagesModalProps> = ({ isOpen, onClose, initialT
             console.error("Error ensuring conversation exists:", error);
         }
     };
-
-    useEffect(() => {
-        if (!isOpen) {
-            setActiveConversationId(null);
-            setView('list');
-            return;
-        }
-
-        if (initialConversationId) {
-            setActiveConversationId(initialConversationId);
-            return;
-        }
-
-        if (initialTargetUser) {
-            startConversationWithUser(initialTargetUser);
-        } else {
-            setActiveConversationId(null);
-        }
-    }, [isOpen, initialTargetUser, initialConversationId]);
-
+    
     if (!isOpen) return null;
     
     const handleToggleAnonymous = async () => {
@@ -309,14 +349,21 @@ const MessagesModal: React.FC<MessagesModalProps> = ({ isOpen, onClose, initialT
 
         setIsPublishingDiary(true);
         try {
-            await addDoc(collection(db, 'diaries'), {
+            const diaryData: { [key: string]: any } = {
                 userId: currentUser.uid,
                 username: currentUser.displayName,
                 userAvatar: currentUser.photoURL,
                 text: newDiaryEntry.trim(),
                 createdAt: serverTimestamp(),
-            });
+            };
+
+            if (selectedMusic) {
+                diaryData.musicInfo = selectedMusic;
+            }
+
+            await addDoc(collection(db, 'diaries'), diaryData);
             setNewDiaryEntry('');
+            setSelectedMusic(null);
         } catch (error) {
             console.error("Error publishing diary entry: ", error);
         } finally {
@@ -324,7 +371,47 @@ const MessagesModal: React.FC<MessagesModalProps> = ({ isOpen, onClose, initialT
         }
     };
 
+    const handleDeleteDiary = async () => {
+        if (!confirmDeleteDiary) return;
+        try {
+            await deleteDoc(doc(db, 'diaries', confirmDeleteDiary.id));
+            setConfirmDeleteDiary(null);
+            setViewingDiary(null);
+        } catch (error) {
+            console.error("Error deleting diary:", error);
+        }
+    };
+
     const renderContent = () => {
+        if (showMusicSearch) {
+            return (
+                <div className="flex flex-col h-full">
+                    <header className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
+                        <h2 className="text-lg font-semibold">{t('createPost.addMusic')}</h2>
+                    </header>
+                    <div className="flex-grow overflow-y-auto">
+                        <MusicSearch
+                            onSelectMusic={(track) => {
+                                const newMusicInfo = {
+                                    nome: track.trackName,
+                                    artista: track.artistName,
+                                    capa: track.artworkUrl100,
+                                    preview: track.previewUrl,
+                                };
+                                if (editingDiary) {
+                                    setEditingDiary(prev => prev ? ({ ...prev, musicInfo: newMusicInfo }) : null);
+                                } else {
+                                    setSelectedMusic(newMusicInfo);
+                                }
+                                setShowMusicSearch(false);
+                            }}
+                            onBack={() => setShowMusicSearch(false)}
+                        />
+                    </div>
+                </div>
+            );
+        }
+
         if (activeConversationId) {
             return (
                 <ChatWindow 
@@ -386,9 +473,31 @@ const MessagesModal: React.FC<MessagesModalProps> = ({ isOpen, onClose, initialT
                                 rows={2}
                                 disabled={hasPostedToday}
                             />
-                            <Button type="submit" disabled={isPublishingDiary || !newDiaryEntry.trim() || hasPostedToday} className="self-end !w-auto !py-1 !px-3">
-                                {isPublishingDiary ? t('diary.publishing') : t('diary.publish')}
-                            </Button>
+                             <div className="mt-2">
+                              {selectedMusic ? (
+                                  <div className="flex items-center gap-3 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-900">
+                                      <img src={selectedMusic.capa} alt={selectedMusic.nome} className="w-12 h-12 rounded-md object-cover flex-shrink-0" />
+                                      <div className="flex-grow overflow-hidden">
+                                          <p className="font-semibold text-sm truncate">{selectedMusic.nome}</p>
+                                          <p className="text-xs text-zinc-500 truncate">{selectedMusic.artista}</p>
+                                      </div>
+                                      <button type="button" onClick={() => setShowMusicSearch(true)} className="text-sky-500 font-semibold text-sm ml-auto flex-shrink-0">
+                                          {t('createPost.changeMusic')}
+                                      </button>
+                                  </div>
+                              ) : (
+                                  !hasPostedToday &&
+                                  <button type="button" onClick={() => setShowMusicSearch(true)} className="w-full text-zinc-600 dark:text-zinc-300 font-semibold text-sm flex items-center justify-center gap-2 py-2 px-4 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors">
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M18 3a1 1 0 00-1.447-.894L4 6.424V20.5a1 1 0 001.5 1.5h.01L17 18.424V4.5a1 1 0 00-1-1.5zM6 8.118l8-2.436v8.664l-8 2.436V8.118z" /><path d="M11 5.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" /></svg>
+                                      {t('createPost.addMusic')}
+                                  </button>
+                              )}
+                            </div>
+                            {!hasPostedToday && (
+                                <Button type="submit" disabled={isPublishingDiary || !newDiaryEntry.trim()} className="self-end !w-auto !py-1 !px-3 mt-2">
+                                    {isPublishingDiary ? t('diary.publishing') : t('diary.publish')}
+                                </Button>
+                            )}
                         </form>
                     </div>
                     <div className="flex-grow overflow-y-auto">
@@ -422,21 +531,109 @@ const MessagesModal: React.FC<MessagesModalProps> = ({ isOpen, onClose, initialT
                              <img src={viewingDiary.userAvatar} alt={viewingDiary.username} className="w-10 h-10 rounded-full" />
                              <p className="font-semibold text-left">{viewingDiary.username}</p>
                         </div>
+                        {viewingDiary.musicInfo && (
+                            <div className="-mx-2">
+                                <MusicPlayer musicInfo={viewingDiary.musicInfo} isPlaying={true} isMuted={isMusicMuted} setIsMuted={setIsMusicMuted} />
+                            </div>
+                        )}
                         <p className="text-xl font-serif text-center whitespace-pre-wrap flex-grow min-h-[100px]">{viewingDiary.text}</p>
-                        <form onSubmit={(e) => {
-                             e.preventDefault();
-                             const replyText = (e.currentTarget.elements.namedItem('reply') as HTMLInputElement).value;
-                             if(replyText.trim()){
-                                startConversationWithUser({id: viewingDiary.userId, username: viewingDiary.username, avatar: viewingDiary.userAvatar}, replyText)
-                             }
-                        }}>
-                             <input
-                                name="reply"
-                                type="text"
-                                placeholder={t('messages.replyToNote', { username: viewingDiary.username })}
-                                className="w-full bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-full py-2 px-4 text-sm"
-                            />
-                        </form>
+                        
+                        {viewingDiary.userId === currentUser?.uid ? (
+                           <div className="flex items-center justify-center gap-4 mt-2">
+                                <Button 
+                                    onClick={() => { setEditingDiary(viewingDiary); setViewingDiary(null); }} 
+                                    className="!w-auto !bg-zinc-300 dark:!bg-zinc-700 !text-black dark:!text-white"
+                                >
+                                    Editar
+                                </Button>
+                                <Button 
+                                    onClick={() => setConfirmDeleteDiary(viewingDiary)} 
+                                    className="!w-auto !bg-red-500 hover:!bg-red-600"
+                                >
+                                    Excluir
+                                </Button>
+                            </div>
+                        ) : (
+                            <form onSubmit={(e) => {
+                                 e.preventDefault();
+                                 const replyText = (e.currentTarget.elements.namedItem('reply') as HTMLInputElement).value;
+                                 if(replyText.trim()){
+                                    startConversationWithUser({id: viewingDiary.userId, username: viewingDiary.username, avatar: viewingDiary.userAvatar}, replyText)
+                                 }
+                            }}>
+                                 <input
+                                    name="reply"
+                                    type="text"
+                                    placeholder={t('messages.replyToNote', { username: viewingDiary.username })}
+                                    className="w-full bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-full py-2 px-4 text-sm"
+                                />
+                            </form>
+                        )}
+                    </div>
+                </div>
+            )}
+            {editingDiary && (
+                <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[60]" onClick={() => setEditingDiary(null)}>
+                    <form className="bg-zinc-100 dark:bg-zinc-900 rounded-2xl w-full max-w-sm p-6 shadow-lg flex flex-col gap-4" 
+                        onClick={e => e.stopPropagation()}
+                        onSubmit={async (e) => {
+                            e.preventDefault();
+                            if (!editingDiary) return;
+                            await updateDoc(doc(db, 'diaries', editingDiary.id), {
+                                text: editingDiary.text,
+                                musicInfo: editingDiary.musicInfo || null,
+                            });
+                            setEditingDiary(null);
+                        }}
+                    >
+                         <h3 className="text-lg font-semibold text-center">Editar Nota</h3>
+                        <TextAreaInput
+                            id="edit-diary"
+                            label="Sua nota"
+                            value={editingDiary.text}
+                            onChange={(e) => setEditingDiary(prev => prev ? ({ ...prev, text: e.target.value }) : null)}
+                        />
+                        <div>
+                            {editingDiary.musicInfo ? (
+                                <div className="flex items-center gap-3 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800">
+                                    <img src={editingDiary.musicInfo.capa} alt={editingDiary.musicInfo.nome} className="w-12 h-12 rounded-md object-cover flex-shrink-0" />
+                                    <div className="flex-grow overflow-hidden">
+                                        <p className="font-semibold text-sm truncate">{editingDiary.musicInfo.nome}</p>
+                                        <p className="text-xs text-zinc-500 truncate">{editingDiary.musicInfo.artista}</p>
+                                    </div>
+                                     <button type="button" onClick={() => setEditingDiary(prev => prev ? ({...prev, musicInfo: undefined }) : null)} className="text-xs font-semibold text-red-500 hover:underline p-1">{t('editProfile.removeMusic')}</button>
+                                </div>
+                            ) : null}
+                             <button type="button" onClick={() => setShowMusicSearch(true)} className="text-sm font-semibold text-sky-500 hover:text-sky-600 dark:hover:text-sky-400 mt-2 p-0 bg-transparent border-none">
+                                {editingDiary.musicInfo ? t('editProfile.changeMusic') : t('createPost.addMusic')}
+                            </button>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                             <Button type="button" onClick={() => setEditingDiary(null)} className="!w-auto !bg-zinc-300 dark:!bg-zinc-700 !text-black dark:!text-white">
+                                {t('common.cancel')}
+                            </Button>
+                            <Button type="submit" className="!w-auto">
+                                Salvar
+                            </Button>
+                        </div>
+                    </form>
+                </div>
+            )}
+            {confirmDeleteDiary && (
+                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[60]">
+                    <div className="bg-white dark:bg-black rounded-lg shadow-xl p-6 w-full max-w-sm text-center border dark:border-zinc-800">
+                        <h3 className="text-lg font-semibold mb-2">Excluir Nota?</h3>
+                        <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
+                           Tem certeza de que deseja excluir esta nota? Esta ação não pode ser desfeita.
+                        </p>
+                        <div className="flex justify-center gap-4">
+                            <button onClick={() => setConfirmDeleteDiary(null)} className="px-4 py-2 rounded-lg bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 font-semibold">
+                                {t('common.cancel')}
+                            </button>
+                            <button onClick={handleDeleteDiary} className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold">
+                                {t('common.delete')}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

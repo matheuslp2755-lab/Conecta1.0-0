@@ -35,7 +35,6 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, us
   const [profileMusic, setProfileMusic] = useState<MusicInfo | null>(user.profileMusic || null);
   const [isMusicModalOpen, setIsMusicModalOpen] = useState(false);
   const [error, setError] = useState('');
-  const avatarInputRef = useRef<HTMLInputElement>(null);
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -93,20 +92,15 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, us
                       <img src={avatarPreview || user.avatar} alt="Profile" className="w-16 h-16 rounded-full object-cover" />
                       <div className="flex flex-col">
                           <span className="font-semibold">{user.username}</span>
-                          <button 
-                            type="button" 
-                            onClick={() => avatarInputRef.current?.click()}
-                            className="text-sm font-semibold text-sky-500 hover:text-sky-600 dark:hover:text-sky-400 text-left p-0 bg-transparent border-none"
-                          >
+                          <label className="text-sm font-semibold text-sky-500 hover:text-sky-600 dark:hover:text-sky-400 text-left p-0 bg-transparent border-none cursor-pointer">
                             {t('editProfile.changePhoto')}
-                          </button>
-                          <input 
-                            type="file"
-                            ref={avatarInputRef}
-                            onChange={handleAvatarChange}
-                            className="hidden"
-                            accept="image/png, image/jpeg"
-                          />
+                            <input 
+                                type="file"
+                                onChange={handleAvatarChange}
+                                className="hidden"
+                                accept="image/png, image/jpeg"
+                            />
+                          </label>
                       </div>
                   </div>
                   <div className="w-full flex flex-col gap-4 mt-4">

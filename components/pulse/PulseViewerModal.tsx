@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { auth, db, doc, setDoc, serverTimestamp, collection, onSnapshot } from '../../firebase';
 import { useLanguage } from '../../context/LanguageContext';
 import PulseViewsModal from './PulseViewsModal';
+import MusicPlayer from '../feed/MusicPlayer';
 
 type Pulse = {
     id: string;
@@ -9,6 +10,12 @@ type Pulse = {
     legenda: string;
     createdAt: { seconds: number; nanoseconds: number };
     authorId: string;
+    musicInfo?: {
+      nome: string;
+      artista: string;
+      capa: string;
+      preview: string;
+    };
 };
 
 interface PulseViewerModalProps {
@@ -53,6 +60,8 @@ const PulseViewerModal: React.FC<PulseViewerModalProps> = ({ pulses, initialPuls
     const [isDeleting, setIsDeleting] = useState(false);
     const [viewsCount, setViewsCount] = useState(0);
     const [isViewsModalOpen, setIsViewsModalOpen] = useState(false);
+    // FIX: Add isMusicMuted state to manage music player mute status
+    const [isMusicMuted, setIsMusicMuted] = useState(false);
     
     useEffect(() => {
         setLocalPulses([...pulses]);
@@ -191,9 +200,16 @@ const PulseViewerModal: React.FC<PulseViewerModalProps> = ({ pulses, initialPuls
                             <img key={currentPulse.id} src={currentPulse.mediaUrl} alt={currentPulse.legenda || 'Pulse'} className="w-full h-full object-contain" />
                         )}
 
-                        {currentPulse.legenda && (
+                        {(currentPulse.legenda || currentPulse.musicInfo) && (
                             <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent">
-                                <p className="text-white text-center text-sm">{currentPulse.legenda}</p>
+                                {currentPulse.musicInfo && (
+                                    <div className="mb-2 text-white">
+                                        <MusicPlayer musicInfo={currentPulse.musicInfo} isPlaying={true} isMuted={isMusicMuted} setIsMuted={setIsMusicMuted} />
+                                    </div>
+                                )}
+                                {currentPulse.legenda && (
+                                    <p className="text-white text-center text-sm">{currentPulse.legenda}</p>
+                                )}
                             </div>
                         )}
                     </div>

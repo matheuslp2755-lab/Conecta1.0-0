@@ -43,6 +43,12 @@ type PulseType = {
     authorId: string;
     isVentMode?: boolean;
     allowedUsers?: string[];
+    musicInfo?: {
+      nome: string;
+      artista: string;
+      capa: string;
+      preview: string;
+    };
 };
 
 type UserWithPulses = {
@@ -90,7 +96,6 @@ const Feed: React.FC = () => {
   const [initialMessageTarget, setInitialMessageTarget] = useState<{ id: string, username: string, avatar: string } | null>(null);
   const [initialConversationId, setInitialConversationId] = useState<string | null>(null);
   const [playingMusicPostId, setPlayingMusicPostId] = useState<string | null>(null);
-  const [isMusicMuted, setIsMusicMuted] = useState(false);
 
   useEffect(() => {
     if (viewingProfileId || !auth.currentUser) return;
@@ -312,7 +317,7 @@ const Feed: React.FC = () => {
                     )}
                     {feedPosts.length > 0 ? (
                         <div className={`flex flex-col gap-8 ${pulsesByAuthor.size > 0 ? 'mt-4' : ''}`}>
-                            {feedPosts.map(post => <Post key={post.id} post={post} onPostDeleted={handlePostDeleted} playingMusicPostId={playingMusicPostId} setPlayingMusicPostId={setPlayingMusicPostId} isMusicMuted={isMusicMuted} setIsMusicMuted={setIsMusicMuted} />)}
+                            {feedPosts.map(post => <Post key={post.id} post={post} onPostDeleted={handlePostDeleted} playingMusicPostId={playingMusicPostId} setPlayingMusicPostId={setPlayingMusicPostId} />)}
                         </div>
                     ) : (
                         <EmptyFeed />

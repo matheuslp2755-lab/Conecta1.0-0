@@ -14,6 +14,7 @@ import {
 import Button from '../common/Button';
 import TextAreaInput from '../common/TextAreaInput';
 import { useLanguage } from '../../context/LanguageContext';
+import MusicSearch from '../post/MusicSearch';
 
 interface CreatePulseModalProps {
   isOpen: boolean;
@@ -25,6 +26,13 @@ type Follower = {
     id: string;
     username: string;
     avatar: string;
+};
+
+type MusicInfo = {
+  nome: string;
+  artista: string;
+  capa: string;
+  preview: string;
 };
 
 const MediaIcon: React.FC = () => (
@@ -45,6 +53,8 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
     const [followers, setFollowers] = useState<Follower[]>([]);
     const [followerSearch, setFollowerSearch] = useState('');
     const [loadingFollowers, setLoadingFollowers] = useState(false);
+    const [selectedMusic, setSelectedMusic] = useState<MusicInfo | null>(null);
+    const [showMusicSearch, setShowMusicSearch] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -59,6 +69,8 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
             setAllowedUsers([]);
             setFollowers([]);
             setFollowerSearch('');
+            setSelectedMusic(null);
+            setShowMusicSearch(false);
         }
     }, [isOpen]);
 
@@ -130,6 +142,10 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
                 legenda: caption,
                 createdAt: serverTimestamp(),
             };
+            
+            if (selectedMusic) {
+                pulseData.musicInfo = selectedMusic;
+            }
 
             if (isVentMode) {
                 pulseData.isVentMode = true;
@@ -160,15 +176,28 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
                 onClick={e => e.stopPropagation()}
             >
                 <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
-                    <h2 className="text-lg font-semibold">{t('createPulse.title')}</h2>
-                    {mediaPreview && (
+                    <h2 className="text-lg font-semibold">{showMusicSearch ? t('createPost.addMusic') : t('createPulse.title')}</h2>
+                    {mediaPreview && !showMusicSearch && (
                          <Button onClick={handleSubmit} disabled={submitting} className="!w-auto !py-0 !px-3 !text-sm">
                             {submitting ? t('createPulse.publishing') : t('createPulse.publish')}
                         </Button>
                     )}
                 </div>
                 <div className="flex-grow overflow-y-auto">
-                    {mediaPreview ? (
+                    {showMusicSearch ? (
+                        <MusicSearch
+                          onSelectMusic={(track) => {
+                            setSelectedMusic({
+                                nome: track.trackName,
+                                artista: track.artistName,
+                                capa: track.artworkUrl100,
+                                preview: track.previewUrl,
+                            });
+                            setShowMusicSearch(false);
+                          }}
+                          onBack={() => setShowMusicSearch(false)}
+                        />
+                    ) : mediaPreview ? (
                         <div className="flex flex-col md:flex-row">
                             <div className="w-full md:w-1/2 aspect-[9/16] bg-black flex items-center justify-center">
                                 {mediaType === 'image' && <img src={mediaPreview} alt="Pulse preview" className="max-h-full max-w-full object-contain" />}
@@ -186,6 +215,25 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
                                     onChange={(e) => setCaption(e.target.value)}
                                     className="!min-h-[100px]"
                                 />
+                                <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                                {selectedMusic ? (
+                                    <div className="flex items-center gap-3">
+                                        <img src={selectedMusic.capa} alt={selectedMusic.nome} className="w-12 h-12 rounded-md object-cover flex-shrink-0" />
+                                        <div className="flex-grow overflow-hidden">
+                                            <p className="font-semibold text-sm truncate">{selectedMusic.nome}</p>
+                                            <p className="text-xs text-zinc-500 truncate">{selectedMusic.artista}</p>
+                                        </div>
+                                        <button type="button" onClick={() => setShowMusicSearch(true)} className="text-sky-500 font-semibold text-sm ml-auto flex-shrink-0">
+                                            {t('createPost.changeMusic')}
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button type="button" onClick={() => setShowMusicSearch(true)} className="w-full text-zinc-600 dark:text-zinc-300 font-semibold text-sm flex items-center justify-center gap-2 py-2 px-4 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M18 3a1 1 0 00-1.447-.894L4 6.424V20.5a1 1 0 001.5 1.5h.01L17 18.424V4.5a1 1 0 00-1-1.5zM6 8.118l8-2.436v8.664l-8 2.436V8.118z" /><path d="M11 5.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" /></svg>
+                                        {t('createPost.addMusic')}
+                                    </button>
+                                )}
+                                </div>
                                 <div className="flex items-center justify-between w-full mt-4 py-2 border-y border-zinc-200 dark:border-zinc-800">
                                     <div>
                                         <label htmlFor="vent-mode-pulse" className="font-semibold text-sm">{t('createPulse.ventMode')}</label>

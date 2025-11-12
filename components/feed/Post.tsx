@@ -392,9 +392,11 @@ interface PostProps {
   onPostDeleted: (postId: string) => void;
   playingMusicPostId: string | null;
   setPlayingMusicPostId: (postId: string | null) => void;
+  isMusicMuted: boolean;
+  setIsMusicMuted: (isMuted: boolean) => void;
 }
 
-const Post: React.FC<PostProps> = ({ post, onPostDeleted, playingMusicPostId, setPlayingMusicPostId }) => {
+const Post: React.FC<PostProps> = ({ post, onPostDeleted, playingMusicPostId, setPlayingMusicPostId, isMusicMuted, setIsMusicMuted }) => {
   const currentUser = auth.currentUser;
   const { t } = useLanguage();
   const { formatTimestamp } = useTimeAgo();
@@ -807,7 +809,11 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted, playingMusicPostId, se
             <img src={postData.imageUrl} alt="Post content" className="w-full object-cover" />
         </div>
         
-        {postData.musicInfo && <MusicPlayer musicInfo={postData.musicInfo} isPlaying={playingMusicPostId === postData.id} />}
+        {postData.musicInfo && (
+            <div className="bg-zinc-50 dark:bg-zinc-950 border-y border-zinc-200 dark:border-zinc-800">
+                <MusicPlayer musicInfo={postData.musicInfo} isPlaying={playingMusicPostId === postData.id} isMuted={isMusicMuted} setIsMuted={setIsMusicMuted} />
+            </div>
+        )}
 
         <div className="p-4">
             <div className="flex items-center gap-4 mb-2">

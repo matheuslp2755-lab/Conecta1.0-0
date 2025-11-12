@@ -11,6 +11,8 @@ interface MusicInfo {
 interface MusicPlayerProps {
   musicInfo: MusicInfo;
   isPlaying: boolean;
+  isMuted: boolean;
+  setIsMuted: (isMuted: boolean) => void;
 }
 
 const PlayIcon: React.FC<{className?: string}> = ({ className }) => (
@@ -26,8 +28,21 @@ const PauseIcon: React.FC<{className?: string}> = ({ className }) => (
     </svg>
 );
 
+const VolumeOnIcon: React.FC<{className?: string}> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+    </svg>
+);
 
-const MusicPlayer: React.FC<MusicPlayerProps> = ({ musicInfo, isPlaying }) => {
+const VolumeOffIcon: React.FC<{className?: string}> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+    </svg>
+);
+
+
+const MusicPlayer: React.FC<MusicPlayerProps> = ({ musicInfo, isPlaying, isMuted, setIsMuted }) => {
     const { t } = useLanguage();
     const audioRef = useRef<HTMLAudioElement>(null);
     const [isAudioPlaying, setIsAudioPlaying] = useState(false);
@@ -85,7 +100,7 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ musicInfo, isPlaying }) => {
     const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
 
     return (
-        <div className="p-3 bg-zinc-50 dark:bg-zinc-950 border-y border-zinc-200 dark:border-zinc-800">
+        <div className="p-3">
             <div className="flex items-center gap-3">
                 <div className="relative flex-shrink-0 w-12 h-12">
                     <img src={musicInfo.capa} alt={musicInfo.nome} className="w-full h-full rounded-md object-cover"/>
@@ -99,12 +114,19 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ musicInfo, isPlaying }) => {
                 </div>
                 <div className="flex-grow overflow-hidden">
                     <p className="font-semibold text-sm truncate">{musicInfo.nome}</p>
-                    <p className="text-xs text-zinc-500 truncate">{musicInfo.artista}</p>
+                    <p className="text-xs text-current opacity-70 truncate">{musicInfo.artista}</p>
                      <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-1 mt-2">
                         <div className="bg-sky-500 h-1 rounded-full" style={{ width: `${progressPercentage}%` }}></div>
                     </div>
                 </div>
-                <audio ref={audioRef} src={musicInfo.preview} loop preload="metadata" />
+                 <button 
+                    onClick={() => setIsMuted(!isMuted)} 
+                    className="p-1 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-full flex-shrink-0"
+                    aria-label={isMuted ? "Unmute" : "Mute"}
+                >
+                    {isMuted ? <VolumeOffIcon className="w-5 h-5" /> : <VolumeOnIcon className="w-5 h-5" />}
+                </button>
+                <audio ref={audioRef} src={musicInfo.preview} loop preload="metadata" muted={isMuted} />
             </div>
         </div>
     );
