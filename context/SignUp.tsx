@@ -66,6 +66,7 @@ const SignUp: React.FC<SignUpProps> = ({ onSwitchMode }) => {
         lastSeen: serverTimestamp(),
         language: 'pt-BR',
         isAnonymous: false,
+        oneSignalPlayerId: null,
       });
 
       // Auth state change will be handled by App.tsx

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, StrictMode, useRef } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth, db, doc, updateDoc, serverTimestamp, messaging, getToken, onMessage, collection, query, where, onSnapshot } from './firebase';
+import { auth, db, doc, updateDoc, serverTimestamp, collection, query, where, onSnapshot } from './firebase';
 import Login from './components/Login';
 import SignUp from './context/SignUp';
 import Feed from './components/Feed';
@@ -9,6 +9,12 @@ import { CallProvider, useCall } from './context/CallContext';
 import WelcomeAnimation from './components/feed/WelcomeAnimation';
 import Toast from './components/common/Toast';
 import CallUI from './components/call/CallUI';
+
+declare global {
+  interface Window {
+    OneSignal: any;
+  }
+}
 
 const AppContent: React.FC = () => {
   const [user, setUser] = useState<any | null>(null);
@@ -94,46 +100,46 @@ const AppContent: React.FC = () => {
     };
 }, [user]);
 
-  useEffect(() => {
-    if (!user) return;
+useEffect(() => {
+    // This effect runs when the user's authentication state changes.
+    window.OneSignal = window.OneSignal || [];
+    const OneSignal = window.OneSignal;
 
-    const requestPermissionAndGetToken = async () => {
-      try {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-          console.log('Notification permission granted.');
-          const currentToken = await getToken(messaging, {
-            vapidKey: 'BM6X7BMtwcgtZ8qpVGzFa7TAwm9dJlMyggtTdeTUNmdgSR4nypTcikswMgWlcP0ZWFRQg9ujZ1fy6SfjO1lLar4',
+    if (user) {
+      // User is logged in, initialize OneSignal and associate with our user ID.
+      OneSignal.push(() => {
+        OneSignal.init({
+          appId: "c5a6a4de-d3bd-4f08-b196-8cae4a5264dc",
+        }).then(() => {
+          // Associate our internal user ID with this OneSignal device
+          OneSignal.login(user.uid);
+
+          // Listen for subscription changes
+          OneSignal.User.PushSubscription.addEventListener('change', async () => {
+            const playerId = OneSignal.User.PushSubscription.id;
+            if (playerId) {
+              // Save the new player ID to Firestore
+              console.log("OneSignal Player ID:", playerId);
+              const userDocRef = doc(db, 'users', user.uid);
+              try {
+                await updateDoc(userDocRef, {
+                  oneSignalPlayerId: playerId,
+                });
+              } catch (error) {
+                console.error("Failed to update OneSignal Player ID in Firestore:", error);
+              }
+            }
           });
-
-          if (currentToken) {
-            console.log('FCM Token:', currentToken);
-            const userDocRef = doc(db, 'users', user.uid);
-            await updateDoc(userDocRef, {
-              fcmToken: currentToken,
-            });
-          } else {
-            console.log('No registration token available. Request permission to generate one.');
-          }
-        } else {
-          console.log('Unable to get permission to notify.');
+        });
+      });
+    } else {
+      // User is logged out, disassociate from OneSignal.
+      OneSignal.push(() => {
+        if (OneSignal.isInitialized) {
+          OneSignal.logout();
         }
-      } catch (error) {
-        console.error('An error occurred while retrieving token. ', error);
-      }
-    };
-    
-    requestPermissionAndGetToken();
-
-    const unsubscribeOnMessage = onMessage(messaging, (payload) => {
-      console.log('Foreground message received. ', payload);
-      // You can display a toast notification here.
-      // For example: new Notification(payload.notification.title, { body: payload.notification.body });
-    });
-    
-    return () => {
-        unsubscribeOnMessage();
-    };
+      });
+    }
   }, [user]);
 
   const switchAuthPage = (page: 'login' | 'signup') => {
