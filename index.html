@@ -20,12 +20,8 @@
   }
 }
 </script>
-</head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-    <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async=""></script>
+    <!-- OneSignal SDK -->
+    <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async></script>
     <script>
       window.OneSignal = window.OneSignal || [];
       OneSignal.push(function() {
@@ -35,8 +31,15 @@
           notifyButton: {
             enable: true,
           },
+          allowLocalhostAsSecureOrigin: true,
         });
+        OneSignal.showNativePrompt();
       });
     </script>
+</head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>
