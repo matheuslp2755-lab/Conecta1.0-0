@@ -110,6 +110,10 @@ useEffect(() => {
       OneSignal.push(() => {
         OneSignal.init({
           appId: "c5a6a4de-d3bd-4f08-b196-8cae4a5264dc",
+          safari_web_id: "",
+          notifyButton: {
+            enable: true,
+          },
         }).then(() => {
           // Associate our internal user ID with this OneSignal device
           OneSignal.login(user.uid);
