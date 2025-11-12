@@ -108,15 +108,34 @@ useEffect(() => {
     const syncOneSignalUser = async () => {
         await OneSignal.isInitialized;
 
-        if (!OneSignal.User) {
-            console.warn("OneSignal User object not available.");
-            return;
+        // Login/logout logic based on app's user state
+        if (user) {
+            // Check if OneSignal user is already set to this app user
+            let currentOneSignalId = null;
+            if (OneSignal.User && typeof OneSignal.User.getExternalId === 'function') {
+                currentOneSignalId = OneSignal.User.getExternalId();
+            }
+
+            if (currentOneSignalId !== user.uid) {
+                console.log(`Logging into OneSignal with external_id: ${user.uid}`);
+                await OneSignal.login(user.uid);
+            }
+        } else {
+            // Logout from OneSignal if app user is logged out
+            if (OneSignal.User && typeof OneSignal.User.getExternalId === 'function') {
+                const currentOneSignalId = OneSignal.User.getExternalId();
+                if (currentOneSignalId) {
+                    console.log("Logging out from OneSignal.");
+                    await OneSignal.logout();
+                }
+            }
         }
 
-        if (!window.oneSignalListenerAttached) {
-            window.oneSignalListenerAttached = true;
-            // The PushSubscription object might not exist if push is not supported or permission is denied.
-            if (OneSignal.User.PushSubscription) {
+        // Subscription management logic, only runs if user is logged in AND subscribed.
+        if (user && OneSignal.User && OneSignal.User.PushSubscription) {
+            // Attach listener for subscription changes only once
+            if (!window.oneSignalListenerAttached) {
+                window.oneSignalListenerAttached = true;
                 OneSignal.User.PushSubscription.addEventListener('change', async (change: any) => {
                     const currentUser = auth.currentUser;
                     if (change.current.id && currentUser) {
@@ -129,37 +148,24 @@ useEffect(() => {
                         }
                     }
                 });
-            } else {
-                console.warn("OneSignal Push Subscription object not available.");
             }
-        }
-        
-        const currentOneSignalId = OneSignal.User.getExternalId();
-        
-        if (user) { 
-            if (currentOneSignalId !== user.uid) {
-                await OneSignal.login(user.uid);
-            }
-            
-            if (OneSignal.User.PushSubscription) {
-                const currentSubscriptionId = OneSignal.User.PushSubscription.id;
-                if (currentSubscriptionId) {
-                    const userDocRef = doc(db, 'users', user.uid);
-                    try {
-                        const userDoc = await getDoc(userDocRef);
-                        if (userDoc.exists() && userDoc.data().oneSignalPlayerId !== currentSubscriptionId) {
-                           await updateDoc(userDocRef, { oneSignalPlayerId: currentSubscriptionId });
-                        }
-                    } catch(e) {
-                        console.error("Error checking/updating OneSignal playerId on user doc", e);
+
+            // Sync current subscription ID to Firestore
+            const currentSubscriptionId = OneSignal.User.PushSubscription.id;
+            if (currentSubscriptionId) {
+                const userDocRef = doc(db, 'users', user.uid);
+                try {
+                    const userDoc = await getDoc(userDocRef);
+                    if (userDoc.exists() && userDoc.data().oneSignalPlayerId !== currentSubscriptionId) {
+                       await updateDoc(userDocRef, { oneSignalPlayerId: currentSubscriptionId });
                     }
+                } catch(e) {
+                    console.error("Error checking/updating OneSignal playerId on user doc", e);
                 }
             }
-            
-        } else {
-            if (currentOneSignalId) {
-                await OneSignal.logout();
-            }
+        } else if (user) {
+            // This case handles when user is logged in but push is not enabled/supported
+            console.warn("OneSignal User or PushSubscription not available. Cannot sync subscription ID.");
         }
     };
 
