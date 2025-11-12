@@ -1,6 +1,6 @@
 import React, { useState, useEffect, StrictMode, useRef } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth, db, doc, updateDoc, serverTimestamp, collection, query, where, onSnapshot } from './firebase';
+import { auth, db, doc, updateDoc, serverTimestamp, collection, query, where, onSnapshot, getDoc } from './firebase';
 import Login from './components/Login';
 import SignUp from './context/SignUp';
 import Feed from './components/Feed';
@@ -13,6 +13,7 @@ import CallUI from './components/call/CallUI';
 declare global {
   interface Window {
     OneSignal: any;
+    oneSignalListenerAttached?: boolean;
   }
 }
 
@@ -101,50 +102,70 @@ const AppContent: React.FC = () => {
 }, [user]);
 
 useEffect(() => {
-    // This effect runs when the user's authentication state changes.
     window.OneSignal = window.OneSignal || [];
     const OneSignal = window.OneSignal;
 
-    if (user) {
-      // User is logged in, initialize OneSignal and associate with our user ID.
-      OneSignal.push(() => {
-        OneSignal.init({
-          appId: "c5a6a4de-d3bd-4f08-b196-8cae4a5264dc",
-          safari_web_id: "",
-          notifyButton: {
-            enable: true,
-          },
-        }).then(() => {
-          // Associate our internal user ID with this OneSignal device
-          OneSignal.login(user.uid);
+    const syncOneSignalUser = async () => {
+        await OneSignal.isInitialized;
 
-          // Listen for subscription changes
-          OneSignal.User.PushSubscription.addEventListener('change', async () => {
-            const playerId = OneSignal.User.PushSubscription.id;
-            if (playerId) {
-              // Save the new player ID to Firestore
-              console.log("OneSignal Player ID:", playerId);
-              const userDocRef = doc(db, 'users', user.uid);
-              try {
-                await updateDoc(userDocRef, {
-                  oneSignalPlayerId: playerId,
-                });
-              } catch (error) {
-                console.error("Failed to update OneSignal Player ID in Firestore:", error);
-              }
-            }
-          });
-        });
-      });
-    } else {
-      // User is logged out, disassociate from OneSignal.
-      OneSignal.push(() => {
-        if (OneSignal.isInitialized) {
-          OneSignal.logout();
+        if (!OneSignal.User) {
+            console.warn("OneSignal User object not available.");
+            return;
         }
-      });
-    }
-  }, [user]);
+
+        if (!window.oneSignalListenerAttached) {
+            window.oneSignalListenerAttached = true;
+            // The PushSubscription object might not exist if push is not supported or permission is denied.
+            if (OneSignal.User.PushSubscription) {
+                OneSignal.User.PushSubscription.addEventListener('change', async (change: any) => {
+                    const currentUser = auth.currentUser;
+                    if (change.current.id && currentUser) {
+                        console.log("OneSignal Push Subscription ID changed to:", change.current.id);
+                        const userDocRef = doc(db, 'users', currentUser.uid);
+                        try {
+                            await updateDoc(userDocRef, { oneSignalPlayerId: change.current.id });
+                        } catch (error) {
+                            console.error("Failed to update OneSignal Player ID in Firestore:", error);
+                        }
+                    }
+                });
+            } else {
+                console.warn("OneSignal Push Subscription object not available.");
+            }
+        }
+        
+        const currentOneSignalId = OneSignal.User.getExternalId();
+        
+        if (user) { 
+            if (currentOneSignalId !== user.uid) {
+                await OneSignal.login(user.uid);
+            }
+            
+            if (OneSignal.User.PushSubscription) {
+                const currentSubscriptionId = OneSignal.User.PushSubscription.id;
+                if (currentSubscriptionId) {
+                    const userDocRef = doc(db, 'users', user.uid);
+                    try {
+                        const userDoc = await getDoc(userDocRef);
+                        if (userDoc.exists() && userDoc.data().oneSignalPlayerId !== currentSubscriptionId) {
+                           await updateDoc(userDocRef, { oneSignalPlayerId: currentSubscriptionId });
+                        }
+                    } catch(e) {
+                        console.error("Error checking/updating OneSignal playerId on user doc", e);
+                    }
+                }
+            }
+            
+        } else {
+            if (currentOneSignalId) {
+                await OneSignal.logout();
+            }
+        }
+    };
+
+    OneSignal.push(syncOneSignalUser);
+}, [user]);
+
 
   const switchAuthPage = (page: 'login' | 'signup') => {
     setAuthPage(page);

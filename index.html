@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Conecta+</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async=""></script>
   <script type="importmap">
 {
   "imports": {
@@ -26,5 +25,18 @@
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
+    <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async=""></script>
+    <script>
+      window.OneSignal = window.OneSignal || [];
+      OneSignal.push(function() {
+        OneSignal.init({
+          appId: "c5a6a4de-d3bd-4f08-b196-8cae4a5264dc",
+          safari_web_id: "",
+          notifyButton: {
+            enable: true,
+          },
+        });
+      });
+    </script>
   </body>
 </html>
