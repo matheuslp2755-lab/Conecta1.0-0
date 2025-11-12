@@ -138,7 +138,6 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
             const postsQuery = query(collection(db, 'posts'), where('userId', '==', userId));
             const duoPostsQuery = query(collection(db, 'posts'), where('duoPartner.userId', '==', userId));
             
-            // FIX: Corrected a typo where duoPostsSnap was used instead of duoPostsQuery.
             const [followersSnap, followingSnap, pulsesSnap, postsSnap, duoPostsSnap] = await Promise.all([
                 getDocs(followersQuery),
                 getDocs(followingQuery),
@@ -404,7 +403,6 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
 
             if (Object.keys(authUpdates).length > 0) {
                 await updateProfile(userToUpdate, authUpdates);
-                await userToUpdate.reload(); // Force refresh of the user object
             }
 
             if (newAvatarUrl) {

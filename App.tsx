@@ -1,23 +1,23 @@
 import React, { useState, useEffect, StrictMode, useRef } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db, doc, updateDoc, serverTimestamp, messaging, getToken, onMessage, collection, query, where, onSnapshot } from './firebase';
 import Login from './components/Login';
 import SignUp from './context/SignUp';
 import Feed from './components/Feed';
 import { LanguageProvider } from './context/LanguageContext';
 import { CallProvider, useCall } from './context/CallContext';
-import WelcomeAnimation from './components/common/WelcomeAnimation';
+import WelcomeAnimation from './components/feed/WelcomeAnimation';
 import Toast from './components/common/Toast';
 import CallUI from './components/call/CallUI';
 
 const AppContent: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [authPage, setAuthPage] = useState<'login' | 'signup'>('login');
   const [showWelcomeAnimation, setShowWelcomeAnimation] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
-  const prevUser = useRef<User | null>(null);
+  const prevUser = useRef<any | null>(null);
   const { setIncomingCall, activeCall } = useCall();
 
   useEffect(() => {

@@ -1,6 +1,5 @@
-// FIX: Reverted to a direct import for `initializeApp` to fix module resolution.
 import { initializeApp } from 'firebase/app';
-import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import { 
   getFirestore, 
   collection, 
@@ -33,14 +32,9 @@ const firebaseConfig = {
     appId: "1:1006477304115:web:e88d8e5f2e75d1b4df5e46"
 };
 
-// Initialize Firebase using the modular SDK
 const app = initializeApp(firebaseConfig);
-
-// Get services for the initialized app
 const auth = getAuth(app);
 const db = getFirestore(app);
-// Explicitly initialize Storage with the bucket URL.
-// This can resolve issues where the default bucket from the config is not being picked up correctly.
 const storage = getStorage(app, `gs://${firebaseConfig.storageBucket}`);
 const messaging = getMessaging(app);
 
@@ -71,6 +65,5 @@ export {
   arrayRemove,
   onSnapshot,
   writeBatch,
-  deleteObject,
-  sendPasswordResetEmail
+  deleteObject
 };
