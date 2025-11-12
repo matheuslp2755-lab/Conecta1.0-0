@@ -1,13 +1,12 @@
 [
-    {
-        "relation": ["delegate_permission/common.handle_all_urls"],
-            "target": {
-                  "namespace": "android_app",
-                        "package_name": "Conecta.plus0034",
-                              "sha256_cert_fingerprints": [
-                                      "08:8B:BB:47:A3:4C:A7:B3:54:56:6B:94:10:30:95:B8:C7:B1:31:E2:9E:DF:01:15:C6:D6:41:DE:0D:57:41:F4"
-                                            ]
-                                                }
-                                                  }
-                                                  ]
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "Conecta.plus0034",
+      "sha256_cert_fingerprints": [
+        "08:8B:BB:47:A3:4C:A7:B3:54:56:6B:94:10:30:95:B8:C7:B1:31:E2:9E:DF:01:15:C6:D6:41:DE:0D:57:41:F4"
+      ]
+    }
+  }
 ]
