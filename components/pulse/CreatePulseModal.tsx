@@ -33,6 +33,7 @@ type MusicInfo = {
   artista: string;
   capa: string;
   preview: string;
+  startTime?: number;
 };
 
 const MediaIcon: React.FC = () => (
@@ -187,12 +188,7 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
                     {showMusicSearch ? (
                         <MusicSearch
                           onSelectMusic={(track) => {
-                            setSelectedMusic({
-                                nome: track.trackName,
-                                artista: track.artistName,
-                                capa: track.artworkUrl100,
-                                preview: track.previewUrl,
-                            });
+                            setSelectedMusic(track);
                             setShowMusicSearch(false);
                           }}
                           onBack={() => setShowMusicSearch(false)}

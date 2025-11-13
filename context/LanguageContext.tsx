@@ -115,7 +115,11 @@ const messages = {
     "noPulsesSuggestion": "Este usuário não compartilhou nenhum pulso.",
     "privateAccountMessage": "Esta Conta é Privada",
     "privateAccountSuggestion": "Siga para ver as fotos e vídeos.",
-    "notFound": "Usuário não encontrado."
+    "notFound": "Usuário não encontrado.",
+    "followersModalTitle": "Seguidores",
+    "followingModalTitle": "Seguindo",
+    "noFollowers": "Nenhum seguidor ainda.",
+    "notFollowingAnyone": "Não segue ninguém."
   },
   "editProfile": {
     "title": "Editar Perfil",
@@ -297,7 +301,9 @@ const messages = {
   },
   "musicSearch": {
     "fetchError": "Falha ao buscar músicas",
-    "searchError": "Ocorreu um erro durante a busca."
+    "searchError": "Ocorreu um erro durante a busca.",
+    "trimInstructions": "Arraste para selecionar o trecho de 15 segundos.",
+    "done": "Concluir"
   },
   "musicPlayer": {
     "play": "Tocar",

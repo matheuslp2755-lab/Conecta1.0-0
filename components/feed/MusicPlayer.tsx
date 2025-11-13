@@ -6,6 +6,7 @@ interface MusicInfo {
   artista: string;
   capa: string;
   preview: string;
+  startTime?: number;
 }
 
 interface MusicPlayerProps {
@@ -41,13 +42,13 @@ const VolumeOffIcon: React.FC<{className?: string}> = ({ className }) => (
     </svg>
 );
 
+const SNIPPET_DURATION = 15;
 
 const MusicPlayer: React.FC<MusicPlayerProps> = ({ musicInfo, isPlaying, isMuted, setIsMuted }) => {
     const { t } = useLanguage();
     const audioRef = useRef<HTMLAudioElement>(null);
     const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-    const [duration, setDuration] = useState(0);
-    const [currentTime, setCurrentTime] = useState(0);
+    const [currentTime, setCurrentTime] = useState(musicInfo.startTime || 0);
 
     const togglePlayPause = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -61,43 +62,53 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ musicInfo, isPlaying, isMuted
     };
     
     useEffect(() => {
+        const audio = audioRef.current;
+        if (!audio) return;
+
         if (isPlaying) {
-            audioRef.current?.play().catch(() => {
+            const startTime = musicInfo.startTime || 0;
+            if (audio.currentTime < startTime || audio.currentTime >= startTime + SNIPPET_DURATION) {
+                audio.currentTime = startTime;
+            }
+            audio.play().catch(() => {
                 setIsAudioPlaying(false);
             });
         } else {
-            audioRef.current?.pause();
+            audio.pause();
         }
-    }, [isPlaying]);
+    }, [isPlaying, musicInfo.startTime]);
 
     useEffect(() => {
         const audio = audioRef.current;
         if (!audio) return;
 
-        const setAudioData = () => {
-            setDuration(audio.duration);
-            setCurrentTime(audio.currentTime);
+        const handleTimeUpdate = () => {
+            const time = audio.currentTime;
+            const startTime = musicInfo.startTime || 0;
+            if (time >= startTime + SNIPPET_DURATION) {
+                audio.currentTime = startTime; // Loop
+            }
+            setCurrentTime(time);
         };
-        const setAudioTime = () => setCurrentTime(audio.currentTime);
         const handlePlay = () => setIsAudioPlaying(true);
         const handlePause = () => setIsAudioPlaying(false);
         
-        audio.addEventListener('loadeddata', setAudioData);
-        audio.addEventListener('timeupdate', setAudioTime);
+        audio.addEventListener('timeupdate', handleTimeUpdate);
         audio.addEventListener('play', handlePlay);
         audio.addEventListener('pause', handlePause);
         audio.addEventListener('ended', handlePause);
 
         return () => {
-            audio.removeEventListener('loadeddata', setAudioData);
-            audio.removeEventListener('timeupdate', setAudioTime);
+            audio.removeEventListener('timeupdate', handleTimeUpdate);
             audio.removeEventListener('play', handlePlay);
             audio.removeEventListener('pause', handlePause);
             audio.removeEventListener('ended', handlePause);
         };
-    }, []);
+    }, [musicInfo.startTime]);
 
-    const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
+    const startTime = musicInfo.startTime || 0;
+    const relativeCurrentTime = Math.max(0, currentTime - startTime);
+    const progressPercentage = Math.min(100, (relativeCurrentTime / SNIPPET_DURATION) * 100);
 
     return (
         <div className="p-3">

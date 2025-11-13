@@ -35,6 +35,7 @@ type MusicInfo = {
   artista: string;
   capa: string;
   preview: string;
+  startTime?: number;
 };
 
 const ImageUploadIcon: React.FC = () => (
@@ -188,12 +189,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
                     {showMusicSearch ? (
                         <MusicSearch
                           onSelectMusic={(track) => {
-                            setSelectedMusic({
-                                nome: track.trackName,
-                                artista: track.artistName,
-                                capa: track.artworkUrl100,
-                                preview: track.previewUrl,
-                            });
+                            setSelectedMusic(track);
                             setShowMusicSearch(false);
                           }}
                           onBack={() => setShowMusicSearch(false)}

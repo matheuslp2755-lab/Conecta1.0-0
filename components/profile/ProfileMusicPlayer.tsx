@@ -6,6 +6,7 @@ interface MusicInfo {
   artista: string;
   capa: string;
   preview: string;
+  startTime?: number;
 }
 
 interface ProfileMusicPlayerProps {
@@ -24,23 +25,25 @@ const PauseIcon: React.FC<{className?: string}> = ({ className }) => (
     </svg>
 );
 
+const MAX_DURATION = 15;
 
 const ProfileMusicPlayer: React.FC<ProfileMusicPlayerProps> = ({ musicInfo }) => {
     const { t } = useLanguage();
     const audioRef = useRef<HTMLAudioElement>(null);
     const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-    const [currentTime, setCurrentTime] = useState(0);
-    const MAX_DURATION = 15;
+    const [currentTime, setCurrentTime] = useState(musicInfo.startTime || 0);
 
     const togglePlayPause = (e: React.MouseEvent) => {
         e.stopPropagation();
         if (!audioRef.current) return;
         
+        const startTime = musicInfo.startTime || 0;
+
         if (isAudioPlaying) {
             audioRef.current.pause();
         } else {
-             if (audioRef.current.currentTime >= MAX_DURATION) {
-                audioRef.current.currentTime = 0;
+            if (audioRef.current.currentTime < startTime || audioRef.current.currentTime >= startTime + MAX_DURATION) {
+                audioRef.current.currentTime = startTime;
             }
             audioRef.current.play().catch(err => console.error("Error playing audio:", err));
         }
@@ -50,11 +53,13 @@ const ProfileMusicPlayer: React.FC<ProfileMusicPlayerProps> = ({ musicInfo }) =>
         const audio = audioRef.current;
         if (!audio) return;
 
+        const startTime = musicInfo.startTime || 0;
+
         const setAudioTime = () => {
             const time = audio.currentTime;
-            if (time >= MAX_DURATION) {
+            if (time >= startTime + MAX_DURATION) {
                 audio.pause();
-                setCurrentTime(MAX_DURATION);
+                setCurrentTime(startTime + MAX_DURATION);
             } else {
                 setCurrentTime(time);
             }
@@ -64,7 +69,7 @@ const ProfileMusicPlayer: React.FC<ProfileMusicPlayerProps> = ({ musicInfo }) =>
         const handlePause = () => setIsAudioPlaying(false);
         const handleEnded = () => {
             setIsAudioPlaying(false);
-            setCurrentTime(0);
+            setCurrentTime(startTime);
         };
         
         audio.addEventListener('timeupdate', setAudioTime);
@@ -78,9 +83,17 @@ const ProfileMusicPlayer: React.FC<ProfileMusicPlayerProps> = ({ musicInfo }) =>
             audio.removeEventListener('pause', handlePause);
             audio.removeEventListener('ended', handleEnded);
         };
-    }, []);
+    }, [musicInfo.startTime]);
+    
+    // Reset currentTime when musicInfo changes
+    useEffect(() => {
+        setCurrentTime(musicInfo.startTime || 0);
+    }, [musicInfo]);
 
-    const progressPercentage = (currentTime / MAX_DURATION) * 100;
+
+    const startTime = musicInfo.startTime || 0;
+    const relativeCurrentTime = Math.max(0, currentTime - startTime);
+    const progressPercentage = Math.min(100, (relativeCurrentTime / MAX_DURATION) * 100);
 
     return (
         <div className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 w-full">

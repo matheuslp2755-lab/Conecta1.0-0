@@ -30,6 +30,7 @@ import PulseViewerModal from '../pulse/PulseViewerModal';
 import { useLanguage } from '../../context/LanguageContext';
 import { useCall } from '../../context/CallContext';
 import ProfileMusicPlayer from './ProfileMusicPlayer';
+import FollowersModal from './FollowersModal';
 
 const Spinner: React.FC = () => (
     <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-sky-500"></div>
@@ -66,6 +67,7 @@ type MusicInfo = {
     artista: string;
     capa: string;
     preview: string;
+    startTime?: number;
 };
 
 type ProfileUserData = {
@@ -114,6 +116,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
     const [isUpdating, setIsUpdating] = useState(false);
     const [activeTab, setActiveTab] = useState<'posts' | 'pulses'>('posts');
     const [viewingPulse, setViewingPulse] = useState<Pulse | null>(null);
+    const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
+    const [followModalMode, setFollowModalMode] = useState<'followers' | 'following'>('followers');
     const currentUser = auth.currentUser;
 
     useEffect(() => {
@@ -573,8 +577,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
                     </div>
                     <div className="flex items-center gap-8 text-sm">
                         <span><span className="font-semibold">{stats.posts}</span> {t('profile.posts')}</span>
-                        <span><span className="font-semibold">{stats.followers}</span> {t('profile.followers')}</span>
-                        <span><span className="font-semibold">{stats.following}</span> {t('profile.followingCount')}</span>
+                        <button onClick={() => { setFollowModalMode('followers'); setIsFollowModalOpen(true); }} className="hover:underline disabled:no-underline disabled:cursor-default" disabled={stats.followers === 0}>
+                            <span className="font-semibold">{stats.followers}</span> {t('profile.followers')}
+                        </button>
+                        <button onClick={() => { setFollowModalMode('following'); setIsFollowModalOpen(true); }} className="hover:underline disabled:no-underline disabled:cursor-default" disabled={stats.following === 0}>
+                            <span className="font-semibold">{stats.following}</span> {t('profile.followingCount')}
+                        </button>
                     </div>
                     <div className="text-sm pt-2 text-center sm:text-left w-full">
                         {user.profileMusic && <ProfileMusicPlayer musicInfo={user.profileMusic} />}
@@ -609,6 +617,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
                 }}
             />
         )}
+        <FollowersModal
+            isOpen={isFollowModalOpen}
+            onClose={() => setIsFollowModalOpen(false)}
+            userId={userId}
+            mode={followModalMode}
+        />
         </>
     );
 };

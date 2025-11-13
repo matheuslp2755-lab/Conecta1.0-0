@@ -112,7 +112,11 @@
     "noPulsesSuggestion": "This user hasn't shared any pulses.",
     "privateAccountMessage": "This Account is Private",
     "privateAccountSuggestion": "Follow to see their photos and videos.",
-    "notFound": "User not found."
+    "notFound": "User not found.",
+    "followersModalTitle": "Followers",
+    "followingModalTitle": "Following",
+    "noFollowers": "No followers yet.",
+    "notFollowingAnyone": "Not following anyone."
   },
   "editProfile": {
     "title": "Edit Profile",
@@ -149,8 +153,7 @@
     "search": "Search",
     "searching": "Searching...",
     "musicNoResults": "No songs found.",
-    "selectMusic": "Select",
-    "publishError": "Failed to create post. Please try again."
+    "selectMusic": "Select"
   },
   "messages": {
     "title": "Messages",
@@ -333,7 +336,9 @@
   },
   "musicSearch": {
     "fetchError": "Failed to fetch music",
-    "searchError": "An error occurred during search."
+    "searchError": "An error occurred during search.",
+    "trimInstructions": "Drag to select the 15-second snippet.",
+    "done": "Done"
   },
   "musicPlayer": {
     "play": "Play",

@@ -22,6 +22,7 @@ type MusicInfo = {
   artista: string;
   capa: string;
   preview: string;
+  startTime?: number;
 };
 
 type DiaryEntry = {
@@ -148,8 +149,8 @@ const MessagesModal: React.FC<MessagesModalProps> = ({ isOpen, onClose, initialT
     const [showMusicSearch, setShowMusicSearch] = useState(false);
     const [editingDiary, setEditingDiary] = useState<DiaryEntry | null>(null);
     const [confirmDeleteDiary, setConfirmDeleteDiary] = useState<DiaryEntry | null>(null);
-    // FIX: Add isMusicMuted state to manage music player mute status
-    const [isMusicMuted, setIsMusicMuted] = useState(false);
+    // FIX: Cannot find name 'setIsMuted'. Declare isMusicMuted and setIsMuted state variables.
+    const [isMusicMuted, setIsMuted] = useState(false);
 
     const currentUser = auth.currentUser;
 
@@ -392,11 +393,12 @@ const MessagesModal: React.FC<MessagesModalProps> = ({ isOpen, onClose, initialT
                     <div className="flex-grow overflow-y-auto">
                         <MusicSearch
                             onSelectMusic={(track) => {
-                                const newMusicInfo = {
-                                    nome: track.trackName,
-                                    artista: track.artistName,
-                                    capa: track.artworkUrl100,
-                                    preview: track.previewUrl,
+                                const newMusicInfo: MusicInfo = {
+                                    nome: track.nome,
+                                    artista: track.artista,
+                                    capa: track.capa,
+                                    preview: track.preview,
+                                    startTime: track.startTime
                                 };
                                 if (editingDiary) {
                                     setEditingDiary(prev => prev ? ({ ...prev, musicInfo: newMusicInfo }) : null);
@@ -533,7 +535,7 @@ const MessagesModal: React.FC<MessagesModalProps> = ({ isOpen, onClose, initialT
                         </div>
                         {viewingDiary.musicInfo && (
                             <div className="-mx-2">
-                                <MusicPlayer musicInfo={viewingDiary.musicInfo} isPlaying={true} isMuted={isMusicMuted} setIsMuted={setIsMusicMuted} />
+                                <MusicPlayer musicInfo={viewingDiary.musicInfo} isPlaying={true} isMuted={isMusicMuted} setIsMuted={setIsMuted} />
                             </div>
                         )}
                         <p className="text-xl font-serif text-center whitespace-pre-wrap flex-grow min-h-[100px]">{viewingDiary.text}</p>

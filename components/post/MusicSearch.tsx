@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import Button from '../common/Button';
+import MusicTrimmer from './MusicTrimmer';
 
 type MusicTrackFromAPI = {
   trackId: number;
@@ -10,8 +11,16 @@ type MusicTrackFromAPI = {
   previewUrl: string;
 };
 
+type MusicInfo = {
+  nome: string;
+  artista: string;
+  capa: string;
+  preview: string;
+  startTime?: number;
+};
+
 interface MusicSearchProps {
-  onSelectMusic: (track: MusicTrackFromAPI) => void;
+  onSelectMusic: (track: MusicInfo) => void;
   onBack: () => void;
 }
 
@@ -34,6 +43,7 @@ const MusicSearch: React.FC<MusicSearchProps> = ({ onSelectMusic, onBack }) => {
   const [results, setResults] = useState<MusicTrackFromAPI[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [trimmingTrack, setTrimmingTrack] = useState<MusicTrackFromAPI | null>(null);
 
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -59,6 +69,29 @@ const MusicSearch: React.FC<MusicSearchProps> = ({ onSelectMusic, onBack }) => {
       setLoading(false);
     }
   };
+  
+  const handleConfirmTrim = (musicInfo: MusicInfo) => {
+    onSelectMusic(musicInfo);
+    setTrimmingTrack(null);
+  };
+
+  if (trimmingTrack) {
+      return (
+          <div className="p-4 flex flex-col h-[60vh] md:h-auto">
+              <div className="flex items-center gap-2 mb-4">
+                  <button onClick={() => setTrimmingTrack(null)} className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800" aria-label="Back">
+                      <BackArrowIcon className="w-5 h-5"/>
+                  </button>
+                  <h3 className="font-semibold text-lg">{t('addMusicModal.title')}</h3>
+              </div>
+              <MusicTrimmer
+                  track={trimmingTrack}
+                  onConfirm={handleConfirmTrim}
+                  onBack={() => setTrimmingTrack(null)}
+              />
+          </div>
+      );
+  }
 
   return (
     <div className="p-4 flex flex-col h-[60vh] md:h-auto">
@@ -92,7 +125,7 @@ const MusicSearch: React.FC<MusicSearchProps> = ({ onSelectMusic, onBack }) => {
                             <p className="text-xs text-zinc-500 truncate">{track.artistName}</p>
                             <audio src={track.previewUrl} controls className="h-8 mt-1 w-full max-w-xs"></audio>
                         </div>
-                        <Button onClick={() => onSelectMusic(track)} className="!w-auto !py-1 !px-3 !text-sm ml-auto">
+                        <Button onClick={() => setTrimmingTrack(track)} className="!w-auto !py-1 !px-3 !text-sm ml-auto">
                             {t('createPost.selectMusic')}
                         </Button>
                     </div>

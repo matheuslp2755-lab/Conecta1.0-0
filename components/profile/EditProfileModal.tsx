@@ -10,6 +10,7 @@ type MusicInfo = {
   artista: string;
   capa: string;
   preview: string;
+  startTime?: number;
 };
 
 interface EditProfileModalProps {

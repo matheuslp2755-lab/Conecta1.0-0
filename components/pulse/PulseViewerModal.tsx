@@ -15,6 +15,7 @@ type Pulse = {
       artista: string;
       capa: string;
       preview: string;
+      startTime?: number;
     };
 };
 
@@ -60,8 +61,8 @@ const PulseViewerModal: React.FC<PulseViewerModalProps> = ({ pulses, initialPuls
     const [isDeleting, setIsDeleting] = useState(false);
     const [viewsCount, setViewsCount] = useState(0);
     const [isViewsModalOpen, setIsViewsModalOpen] = useState(false);
-    // FIX: Add isMusicMuted state to manage music player mute status
-    const [isMusicMuted, setIsMusicMuted] = useState(false);
+    // FIX: Cannot find name 'setIsMuted'. Declare isMusicMuted and setIsMuted state variables.
+    const [isMusicMuted, setIsMuted] = useState(false);
     
     useEffect(() => {
         setLocalPulses([...pulses]);
@@ -204,7 +205,7 @@ const PulseViewerModal: React.FC<PulseViewerModalProps> = ({ pulses, initialPuls
                             <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent">
                                 {currentPulse.musicInfo && (
                                     <div className="mb-2 text-white">
-                                        <MusicPlayer musicInfo={currentPulse.musicInfo} isPlaying={true} isMuted={isMusicMuted} setIsMuted={setIsMusicMuted} />
+                                        <MusicPlayer musicInfo={currentPulse.musicInfo} isPlaying={true} isMuted={isMusicMuted} setIsMuted={setIsMuted} />
                                     </div>
                                 )}
                                 {currentPulse.legenda && (

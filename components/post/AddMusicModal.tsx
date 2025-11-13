@@ -16,6 +16,7 @@ type MusicInfo = {
   artista: string;
   capa: string;
   preview: string;
+  startTime?: number;
 };
 
 interface AddMusicModalProps {
@@ -31,14 +32,7 @@ const AddMusicModal: React.FC<AddMusicModalProps> = ({ isOpen, onClose, postId, 
 
   if (!isOpen) return null;
 
-  const handleSelectMusic = async (track: MusicTrackFromAPI) => {
-    const musicInfo: MusicInfo = {
-      nome: track.trackName,
-      artista: track.artistName,
-      capa: track.artworkUrl100,
-      preview: track.previewUrl,
-    };
-
+  const handleSelectMusic = async (musicInfo: MusicInfo) => {
     if (isProfileModal) {
       onMusicAdded(musicInfo);
       return;

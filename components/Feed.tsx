@@ -30,6 +30,7 @@ type PostType = {
       artista: string;
       capa: string;
       preview: string;
+      startTime?: number;
     };
     duoPartner?: { userId: string; username: string; userAvatar: string; };
     pendingDuoPartner?: { userId: string; username: string; userAvatar: string; };
