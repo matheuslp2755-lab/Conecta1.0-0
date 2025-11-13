@@ -106,50 +106,55 @@ useEffect(() => {
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     window.OneSignalDeferred.push(async (OneSignal: any) => {
 
-        // Set or remove external user ID based on app's user state
-        if (user) {
-            console.log(`Logging into OneSignal with user ID: ${user.uid}`);
-            await OneSignal.login(user.uid);
-        } else {
-            console.log("Logging out of OneSignal.");
-            await OneSignal.logout();
+        // Attach listener for subscription changes only once.
+        if (!window.oneSignalListenerAttached) {
+            window.oneSignalListenerAttached = true;
+            OneSignal.User.PushSubscription.addEventListener('change', (subscriptionChangeEvent: any) => {
+                console.log("OneSignal Push Subscription state changed.");
+                // Using event.current.id is correct for v16.
+                // It can be null if the user unsubscribes.
+                const newSubscriptionId = subscriptionChangeEvent.current.id;
+
+                // Log only the ID, not the whole event object, to prevent circular reference errors.
+                console.log("Novo ID de push:", newSubscriptionId);
+
+                const currentUser = auth.currentUser;
+                // Only update Firestore if a user is logged in at the time of the change.
+                if (currentUser) {
+                    const userDocRef = doc(db, 'users', currentUser.uid);
+                    updateDoc(userDocRef, { oneSignalPlayerId: newSubscriptionId || null })
+                        .catch(error => console.error("Failed to update OneSignal Player ID in Firestore:", error));
+                }
+            });
         }
 
-        // Subscription management logic, only runs if user is logged in.
         if (user) {
-            // Attach listener for subscription changes only once
-            if (!window.oneSignalListenerAttached) {
-                window.oneSignalListenerAttached = true;
-                OneSignal.User.PushSubscription.addEventListener('change', async (change: any) => {
-                    const currentUser = auth.currentUser;
-                    if (change.current.id && currentUser) {
-                        console.log("OneSignal Push Subscription ID changed to:", change.current.id);
-                        const userDocRef = doc(db, 'users', currentUser.uid);
-                        try {
-                            await updateDoc(userDocRef, { oneSignalPlayerId: change.current.id });
-                        } catch (error) {
-                            console.error("Failed to update OneSignal Player ID in Firestore:", error);
-                        }
-                    }
-                });
-            }
+            // USER LOGGED IN
+            console.log(`OneSignal: Logging into OneSignal with user ID: ${user.uid}`);
+            await OneSignal.login(user.uid);
 
-            // Sync current subscription ID to Firestore
-            const subscription = OneSignal.User.PushSubscription;
-            if (subscription.id) {
+            // This will prompt the user for notifications if not already subscribed
+            await OneSignal.registerForPushNotifications();
+
+            // Sync current subscription ID to Firestore immediately if it exists
+            const subscriptionId = OneSignal.User.PushSubscription.id;
+            if (subscriptionId) {
                 const userDocRef = doc(db, 'users', user.uid);
                 try {
                     const userDoc = await getDoc(userDocRef);
-                    if (userDoc.exists() && userDoc.data().oneSignalPlayerId !== subscription.id) {
-                       await updateDoc(userDocRef, { oneSignalPlayerId: subscription.id });
-                       console.log("Synced OneSignal subscription ID to Firestore:", subscription.id);
+                    if (userDoc.exists() && userDoc.data().oneSignalPlayerId !== subscriptionId) {
+                       await updateDoc(userDocRef, { oneSignalPlayerId: subscriptionId });
+                       console.log("OneSignal: Synced subscription ID to Firestore:", subscriptionId);
                     }
                 } catch(e) {
                     console.error("Error checking/updating OneSignal playerId on user doc", e);
                 }
-            } else {
-                 console.warn("OneSignal PushSubscription not available or no ID. Cannot sync subscription ID.");
             }
+        } else {
+            // USER LOGGED OUT
+            // The isLoggedIn check is deprecated in v16. `logout` can be called safely without checking.
+            console.log("OneSignal: User logged out from Firebase. Logging out of OneSignal if applicable.");
+            await OneSignal.logout();
         }
     });
 }, [user]);

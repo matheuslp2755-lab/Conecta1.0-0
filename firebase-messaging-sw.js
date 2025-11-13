@@ -1,5 +1,9 @@
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 
+// O código do Firebase Messaging estava em conflito com o Service Worker do OneSignal.
+// O código abaixo foi removido para garantir que o OneSignal funcione corretamente.
+
+/*
 // Scripts are imported using importScripts because this is a service worker.
 importScripts("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js");
 importScripts("https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js");
@@ -32,3 +36,4 @@ messaging.onBackgroundMessage(function(payload) {
   return self.registration.showNotification(notificationTitle,
     notificationOptions);
 });
+*/
