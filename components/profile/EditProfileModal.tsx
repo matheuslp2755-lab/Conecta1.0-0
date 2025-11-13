@@ -23,7 +23,7 @@ interface EditProfileModalProps {
     isPrivate?: boolean;
     profileMusic?: MusicInfo;
   };
-  onUpdate: (updatedData: { username: string; bio: string; avatarFile: File | null; isPrivate: boolean; profileMusic: MusicInfo | null }) => Promise<void>;
+  onUpdate: (updatedData: { username: string; bio: string; avatarFile: File | null; avatarPreview: string | null; isPrivate: boolean; profileMusic: MusicInfo | null }) => Promise<void>;
   isSubmitting: boolean;
 }
 
@@ -71,7 +71,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, us
     e.preventDefault();
     setError('');
     try {
-        await onUpdate({ username, bio, avatarFile, isPrivate, profileMusic });
+        await onUpdate({ username, bio, avatarFile, avatarPreview, isPrivate, profileMusic });
         // onClose will be called by parent on success
     } catch (err) {
         console.error(err);

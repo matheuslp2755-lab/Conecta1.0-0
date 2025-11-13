@@ -16,8 +16,10 @@ import {
     getDoc,
     storage,
     storageRef,
-    uploadBytes,
-    getDownloadURL
+    uploadString,
+    getDownloadURL,
+    // FIX: Import 'uploadBytes' from firebase to handle audio file uploads.
+    uploadBytes
 } from '../../firebase';
 import ConnectionCrystal from './ConnectionCrystal';
 import OnlineIndicator from '../common/OnlineIndicator';
@@ -636,6 +638,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, isCurre
         const tempReplyingTo = replyingTo;
         const tempMediaFile = mediaFile;
         const tempMediaType = mediaType;
+        const tempMediaPreview = mediaPreview;
         
         setNewMessage('');
         setReplyingTo(null);
@@ -662,9 +665,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, isCurre
                 };
             }
 
-            if (tempMediaFile && tempMediaType) {
+            if (tempMediaFile && tempMediaType && tempMediaPreview) {
                 const uploadRef = storageRef(storage, `chat_media/${conversationId}/${Date.now()}-${tempMediaFile.name}`);
-                await uploadBytes(uploadRef, tempMediaFile);
+                await uploadString(uploadRef, tempMediaPreview, 'data_url');
                 const mediaUrl = await getDownloadURL(uploadRef);
                 messageData.mediaUrl = mediaUrl;
                 messageData.mediaType = tempMediaType;

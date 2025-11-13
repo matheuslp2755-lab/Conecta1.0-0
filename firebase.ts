@@ -20,7 +20,7 @@ import {
   onSnapshot,
   writeBatch
 } from 'firebase/firestore';
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject, uploadString } from 'firebase/storage';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 
 const firebaseConfig = {
@@ -56,6 +56,7 @@ export {
   serverTimestamp,
   storageRef,
   uploadBytes,
+  uploadString,
   getDownloadURL,
   getDoc,
   updateDoc,

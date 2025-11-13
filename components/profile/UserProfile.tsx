@@ -5,7 +5,7 @@ import {
     db,
     storage,
     storageRef,
-    uploadBytes,
+    uploadString,
     getDownloadURL,
     doc,
     getDoc,
@@ -367,7 +367,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
         console.log("Background avatar update finished.");
     };
 
-    const handleProfileUpdate = async ({ username, bio, avatarFile, isPrivate, profileMusic }: { username: string; bio: string; avatarFile: File | null; isPrivate: boolean; profileMusic: MusicInfo | null; }) => {
+    const handleProfileUpdate = async ({ username, bio, avatarFile, avatarPreview, isPrivate, profileMusic }: { username: string; bio: string; avatarFile: File | null; avatarPreview: string | null; isPrivate: boolean; profileMusic: MusicInfo | null; }) => {
         const userToUpdate = auth.currentUser;
         if (!userToUpdate) return;
         setIsUpdating(true);
@@ -378,9 +378,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
             const authUpdates: { displayName?: string; photoURL?: string } = {};
             let newAvatarUrl: string | undefined = undefined;
 
-            if (avatarFile) {
+            if (avatarFile && avatarPreview) {
                 const avatarStorageRef = storageRef(storage, `avatars/${userToUpdate.uid}/${Date.now()}-${avatarFile.name}`);
-                await uploadBytes(avatarStorageRef, avatarFile);
+                await uploadString(avatarStorageRef, avatarPreview, 'data_url');
                 newAvatarUrl = await getDownloadURL(avatarStorageRef);
                 firestoreUpdates.avatar = newAvatarUrl;
                 authUpdates.photoURL = newAvatarUrl;

@@ -7,7 +7,7 @@ import {
     collection,
     serverTimestamp,
     storageRef,
-    uploadBytes,
+    uploadString,
     getDownloadURL,
     getDocs
 } from '../../firebase';
@@ -133,13 +133,13 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const currentUser = auth.currentUser;
-        if (!mediaFile || !currentUser) return;
+        if (!mediaFile || !currentUser || !mediaPreview) return;
 
         setSubmitting(true);
         setError('');
         try {
             const mediaUploadRef = storageRef(storage, `pulses/${currentUser.uid}/${Date.now()}-${mediaFile.name}`);
-            await uploadBytes(mediaUploadRef, mediaFile);
+            await uploadString(mediaUploadRef, mediaPreview, 'data_url');
             const downloadURL = await getDownloadURL(mediaUploadRef);
 
             const pulseData: { [key: string]: any } = {

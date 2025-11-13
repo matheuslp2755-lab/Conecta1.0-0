@@ -7,7 +7,7 @@ import {
     collection,
     serverTimestamp,
     storageRef,
-    uploadBytes,
+    uploadString,
     getDownloadURL,
     doc,
     getDoc,
@@ -124,7 +124,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const currentUser = auth.currentUser;
-        if (!imageFile || !currentUser) return;
+        if (!imageFile || !currentUser || !imagePreview) return;
 
         setSubmitting(true);
         setError('');
@@ -137,7 +137,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
             const userData = userDocSnap.data();
 
             const imageUploadRef = storageRef(storage, `posts/${currentUser.uid}/${Date.now()}-${imageFile.name}`);
-            await uploadBytes(imageUploadRef, imageFile);
+            await uploadString(imageUploadRef, imagePreview, 'data_url');
             const downloadURL = await getDownloadURL(imageUploadRef);
 
             const postData: { [key: string]: any } = {
