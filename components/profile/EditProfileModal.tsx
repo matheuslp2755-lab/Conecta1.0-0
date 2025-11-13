@@ -57,8 +57,13 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, us
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setAvatarFile(file);
-      setAvatarPreview(URL.createObjectURL(file));
       setError('');
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setAvatarPreview(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 

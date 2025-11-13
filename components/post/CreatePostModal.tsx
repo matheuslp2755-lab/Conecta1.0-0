@@ -101,8 +101,13 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
             setImageFile(file);
-            setImagePreview(URL.createObjectURL(file));
             setError('');
+    
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                setImagePreview(event.target?.result as string);
+            };
+            reader.readAsDataURL(file);
         }
     };
     

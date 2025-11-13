@@ -110,8 +110,13 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
                 return;
             }
             setMediaFile(file);
-            setMediaPreview(URL.createObjectURL(file));
             setError('');
+    
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                setMediaPreview(event.target?.result as string);
+            };
+            reader.readAsDataURL(file);
         }
     };
     

@@ -454,29 +454,34 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, isCurre
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-
+    
         setUploadError('');
-
-        if (file.type.startsWith('video/')) {
-            const video = document.createElement('video');
-            video.preload = 'metadata';
-            video.onloadedmetadata = function() {
-                window.URL.revokeObjectURL(video.src);
-                if (video.duration > 30) {
-                    setUploadError(t('messages.media.videoTooLong'));
-                    if (e.target) e.target.value = '';
-                } else {
-                    setMediaType('video');
-                    setMediaFile(file);
-                    setMediaPreview(URL.createObjectURL(file));
-                }
-            };
-            video.src = URL.createObjectURL(file);
-        } else if (file.type.startsWith('image/')) {
-            setMediaType('image');
-            setMediaFile(file);
-            setMediaPreview(URL.createObjectURL(file));
-        }
+    
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const dataUrl = event.target?.result as string;
+    
+            if (file.type.startsWith('video/')) {
+                const video = document.createElement('video');
+                video.preload = 'metadata';
+                video.onloadedmetadata = function() {
+                    if (video.duration > 30) {
+                        setUploadError(t('messages.media.videoTooLong'));
+                        if (e.target) e.target.value = '';
+                    } else {
+                        setMediaType('video');
+                        setMediaFile(file);
+                        setMediaPreview(dataUrl);
+                    }
+                };
+                video.src = dataUrl;
+            } else if (file.type.startsWith('image/')) {
+                setMediaType('image');
+                setMediaFile(file);
+                setMediaPreview(dataUrl);
+            }
+        };
+        reader.readAsDataURL(file);
     };
 
     const sendAudioMessage = async (audioBlob: Blob) => {
