@@ -533,10 +533,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, isCurre
                     // INSECURE: This is a client-side implementation for demonstration purposes.
                     // The OneSignal REST API Key MUST be kept on a secure server and notifications
                     // should be triggered by a backend function (e.g., Cloud Function) for a production app.
-                    // Replace "YOUR_ONESIGNAL_REST_API_KEY" with your actual key.
-                    const ONESIGNAL_REST_API_KEY = "YOUR_ONESIGNAL_REST_API_KEY";
+                    const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY;
                     
-                    if (ONESIGNAL_REST_API_KEY === "YOUR_ONESIGNAL_REST_API_KEY") {
+                    if (!ONESIGNAL_REST_API_KEY) {
                         console.warn("OneSignal REST API Key is not set. Skipping push notification.");
                         return;
                     }
@@ -731,10 +730,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, isCurre
                     // INSECURE: This is a client-side implementation for demonstration purposes.
                     // The OneSignal REST API Key MUST be kept on a secure server and notifications
                     // should be triggered by a backend function (e.g., Cloud Function) for a production app.
-                    // Replace "YOUR_ONESIGNAL_REST_API_KEY" with your actual key.
-                    const ONESIGNAL_REST_API_KEY = "YOUR_ONESIGNAL_REST_API_KEY";
+                    const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY;
                     
-                    if (ONESIGNAL_REST_API_KEY === "YOUR_ONESIGNAL_REST_API_KEY") {
+                    if (!ONESIGNAL_REST_API_KEY) {
                         console.warn("OneSignal REST API Key is not set. Skipping push notification.");
                         return;
                     }

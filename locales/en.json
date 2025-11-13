@@ -8,7 +8,7 @@
     "user": "User"
   },
   "login": {
-    "title": "💎 Conecta+",
+    "title": "Vibe",
     "emailLabel": "Email address",
     "passwordLabel": "Password",
     "loginButton": "Log In",
@@ -22,7 +22,7 @@
     "googlePlayAlt": "Get it on Google Play"
   },
   "signup": {
-    "title": "💎 Conecta+",
+    "title": "Vibe",
     "subtitle": "Sign up to see photos and videos from your friends.",
     "emailLabel": "Email address",
     "usernameLabel": "Username",
@@ -36,7 +36,7 @@
     "genericError": "Failed to create an account. Please try again."
   },
   "header": {
-    "title": "💎 Conecta+",
+    "title": "Vibe",
     "searchPlaceholder": "Search",
     "noResults": "No results found.",
     "following": "Following",
@@ -60,7 +60,7 @@
     "decline": "Decline"
   },
   "feed": {
-    "welcome": "Welcome to Conecta+",
+    "welcome": "Welcome to Vibe",
     "empty": "It looks like your feed is empty.",
     "emptySuggestion": "Use the search bar to find and follow your friends to see their photos and videos."
   },
@@ -224,8 +224,8 @@
     "requestError": "Failed to send request."
   },
   "crystal": {
-    "formed": "💎 A new Connection Crystal was formed!",
-    "glowing": "💎 Your connection is glowing!",
+    "formed": "A new Connection Crystal was formed!",
+    "glowing": "Your connection is glowing!",
     "level": {
         "brilhante": "Brilliant",
         "equilibrado": "Balanced",
@@ -242,7 +242,7 @@
     "imageLoadError": "Failed to load profile pictures.",
     "streakDays": "{streak} day connection streak",
     "vibe": "— the vibe continues 💬🔥 —",
-    "watermark": "💎 Conecta+"
+    "watermark": "Vibe"
   },
   "createPulse": {
     "title": "Create new pulse",
@@ -267,11 +267,11 @@
     "viewPulse": "View {username}'s pulse"
   },
   "welcome": {
-    "title": "Welcome to Conecta+"
+    "title": "Welcome to Vibe"
   },
   "footer": {
     "language": "English",
-    "copyright": "© {year} Conecta+ from Meta",
+    "copyright": "© {year} Vibe",
     "links": {
       "meta": "Meta",
       "about": "About",

@@ -11,7 +11,7 @@ const messages = {
     "user": "Usuário"
   },
   "login": {
-    "title": "💎 Conecta+",
+    "title": "Vibe",
     "emailLabel": "Endereço de e-mail",
     "passwordLabel": "Senha",
     "loginButton": "Entrar",
@@ -25,7 +25,7 @@ const messages = {
     "googlePlayAlt": "Disponível no Google Play"
   },
   "signup": {
-    "title": "💎 Conecta+",
+    "title": "Vibe",
     "subtitle": "Cadastre-se para ver fotos e vídeos dos seus amigos.",
     "emailLabel": "Endereço de e-mail",
     "usernameLabel": "Nome de usuário",
@@ -39,7 +39,7 @@ const messages = {
     "genericError": "Falha ao criar uma conta. Por favor, tente novamente."
   },
   "header": {
-    "title": "💎 Conecta+",
+    "title": "Vibe",
     "searchPlaceholder": "Pesquisar",
     "noResults": "Nenhum resultado encontrado.",
     "following": "Seguindo",
@@ -63,7 +63,7 @@ const messages = {
     "decline": "Recusar"
   },
   "feed": {
-    "welcome": "Bem-vindo ao Conecta+",
+    "welcome": "Bem-vindo ao Vibe",
     "empty": "Parece que seu feed está vazio.",
     "emptySuggestion": "Use a barra de pesquisa para encontrar e seguir seus amigos para ver as fotos e vídeos deles."
   },
@@ -227,8 +227,8 @@ const messages = {
     "requestError": "Falha ao enviar solicitação."
   },
   "crystal": {
-    "formed": "💎 Um novo Cristal de Conexão foi formado!",
-    "glowing": "💎 Sua conexão está brilhando!",
+    "formed": "Um novo Cristal de Conexão foi formado!",
+    "glowing": "Sua conexão está brilhando!",
     "level": {
       "brilhante": "Brilhante",
       "equilibrado": "Equilibrado",
@@ -245,7 +245,7 @@ const messages = {
     "imageLoadError": "Falha ao carregar as fotos de perfil.",
     "streakDays": "{streak} dias de conexão",
     "vibe": "— a vibe continua 💬🔥 —",
-    "watermark": "💎 Conecta+"
+    "watermark": "Vibe"
   },
   "createPulse": {
     "title": "Criar novo pulso",
@@ -274,11 +274,11 @@ const messages = {
     "viewPulse": "Ver o pulso de {username}"
   },
   "welcome": {
-    "title": "Bem vindo ao Conecta+"
+    "title": "Bem vindo ao Vibe"
   },
   "footer": {
     "language": "Português (Brasil)",
-    "copyright": "© {year} Conecta+ da Meta",
+    "copyright": "© {year} Vibe",
     "links": {
       "meta": "Meta",
       "about": "Sobre",
@@ -302,6 +302,49 @@ const messages = {
   "musicPlayer": {
     "play": "Tocar",
     "pause": "Pausar"
+  },
+  "call": {
+    "call": "Ligar",
+    "calling": "Ligando para {username}...",
+    "incomingCall": "Chamada de {username}",
+    "answer": "Atender",
+    "decline": "Recusar",
+    "hangUp": "Desligar",
+    "callEnded": "Chamada encerrada",
+    "callDeclined": "{username} recusou a chamada.",
+    "callCancelled": "Chamada cancelada.",
+    "onCallWith": "Em chamada com {username}",
+    "enterCallId": "Digite o ID da chamada para entrar",
+    "join": "Entrar",
+    "callId": "ID da Chamada",
+    "copyCallId": "Copiar ID",
+    "copied": "Copiado!",
+    "callInProgress": "Chamada em progresso...",
+    "noMicrophone": "Acesso ao microfone negado. Por favor, habilite nas configurações do seu navegador.",
+    "callError": "Ocorreu um erro durante a chamada.",
+    "videoCall": "Chamada de Vídeo",
+    "voiceCall": "Chamada de Voz"
+  },
+  "resetPassword": {
+    "title": "Redefinir Senha",
+    "instructions": "Insira seu e-mail e enviaremos um link para você voltar a acessar sua conta.",
+    "emailLabel": "Endereço de e-mail",
+    "sendLinkButton": "Enviar Link de Redefinição",
+    "sendingLinkButton": "Enviando...",
+    "backToLogin": "Voltar para o Login",
+    "successMessage": "Verifique seu e-mail para encontrar um link para redefinir sua senha.",
+    "errorNotFound": "E-mail não encontrado. Verifique e tente novamente.",
+    "genericError": "Falha ao enviar o link de redefinição. Por favor, tente novamente mais tarde."
+  },
+  "addCaptionModal": {
+    "title": "Adicionar Legenda",
+    "captionLabel": "Escreva uma legenda...",
+    "save": "Salvar",
+    "saving": "Salvando...",
+    "error": "Falha ao salvar a legenda. Por favor, tente novamente."
+  },
+  "addMusicModal": {
+    "title": "Adicionar Música"
   }
 };
 
