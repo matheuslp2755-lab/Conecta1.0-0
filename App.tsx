@@ -13,6 +13,7 @@ import CallUI from './components/call/CallUI';
 declare global {
   interface Window {
     OneSignal: any;
+    OneSignalDeferred?: any[];
     oneSignalListenerAttached?: boolean;
   }
 }
@@ -102,37 +103,20 @@ const AppContent: React.FC = () => {
 }, [user]);
 
 useEffect(() => {
-    window.OneSignal = window.OneSignal || [];
-    const OneSignal = window.OneSignal;
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async (OneSignal: any) => {
 
-    const syncOneSignalUser = async () => {
-        await OneSignal.isInitialized;
-
-        // Login/logout logic based on app's user state
+        // Set or remove external user ID based on app's user state
         if (user) {
-            // Check if OneSignal user is already set to this app user
-            let currentOneSignalId = null;
-            if (OneSignal.User && typeof OneSignal.User.getExternalId === 'function') {
-                currentOneSignalId = OneSignal.User.getExternalId();
-            }
-
-            if (currentOneSignalId !== user.uid) {
-                console.log(`Logging into OneSignal with external_id: ${user.uid}`);
-                await OneSignal.login(user.uid);
-            }
+            console.log(`Logging into OneSignal with user ID: ${user.uid}`);
+            await OneSignal.login(user.uid);
         } else {
-            // Logout from OneSignal if app user is logged out
-            if (OneSignal.User && typeof OneSignal.User.getExternalId === 'function') {
-                const currentOneSignalId = OneSignal.User.getExternalId();
-                if (currentOneSignalId) {
-                    console.log("Logging out from OneSignal.");
-                    await OneSignal.logout();
-                }
-            }
+            console.log("Logging out of OneSignal.");
+            await OneSignal.logout();
         }
 
-        // Subscription management logic, only runs if user is logged in AND subscribed.
-        if (user && OneSignal.User && OneSignal.User.PushSubscription) {
+        // Subscription management logic, only runs if user is logged in.
+        if (user) {
             // Attach listener for subscription changes only once
             if (!window.oneSignalListenerAttached) {
                 window.oneSignalListenerAttached = true;
@@ -151,25 +135,23 @@ useEffect(() => {
             }
 
             // Sync current subscription ID to Firestore
-            const currentSubscriptionId = OneSignal.User.PushSubscription.id;
-            if (currentSubscriptionId) {
+            const subscription = OneSignal.User.PushSubscription;
+            if (subscription.id) {
                 const userDocRef = doc(db, 'users', user.uid);
                 try {
                     const userDoc = await getDoc(userDocRef);
-                    if (userDoc.exists() && userDoc.data().oneSignalPlayerId !== currentSubscriptionId) {
-                       await updateDoc(userDocRef, { oneSignalPlayerId: currentSubscriptionId });
+                    if (userDoc.exists() && userDoc.data().oneSignalPlayerId !== subscription.id) {
+                       await updateDoc(userDocRef, { oneSignalPlayerId: subscription.id });
+                       console.log("Synced OneSignal subscription ID to Firestore:", subscription.id);
                     }
                 } catch(e) {
                     console.error("Error checking/updating OneSignal playerId on user doc", e);
                 }
+            } else {
+                 console.warn("OneSignal PushSubscription not available or no ID. Cannot sync subscription ID.");
             }
-        } else if (user) {
-            // This case handles when user is logged in but push is not enabled/supported
-            console.warn("OneSignal User or PushSubscription not available. Cannot sync subscription ID.");
         }
-    };
-
-    OneSignal.push(syncOneSignalUser);
+    });
 }, [user]);
 
 

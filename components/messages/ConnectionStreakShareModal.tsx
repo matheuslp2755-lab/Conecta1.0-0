@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { auth, db, storage, addDoc, collection, serverTimestamp, storageRef, uploadBytes, getDownloadURL } from '../../firebase';
+import { auth, db, storage, addDoc, collection, serverTimestamp, storageRef, uploadString, getDownloadURL } from '../../firebase';
 import Button from '../common/Button';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -33,6 +33,7 @@ const Spinner: React.FC = () => (
     </div>
 );
 
+
 const ConnectionStreakShareModal: React.FC<ConnectionStreakShareModalProps> = ({ isOpen, onClose, crystalData, currentUser, otherUser, onPulseCreated }) => {
     const { t } = useLanguage();
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -41,23 +42,19 @@ const ConnectionStreakShareModal: React.FC<ConnectionStreakShareModalProps> = ({
     const [isPublishing, setIsPublishing] = useState(false);
     const [error, setError] = useState('');
 
-    const loadImage = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = 'Anonymous';
-        img.onload = () => resolve(img);
-        img.onerror = (err) => reject(err);
-        img.src = src;
-    });
-
     useEffect(() => {
-        if (!isOpen) return;
+        if (!isOpen) {
+            setGeneratedImage(null);
+            setIsGenerating(true);
+            setError('');
+            return;
+        }
 
         const generateImage = async () => {
             setIsGenerating(true);
-            setGeneratedImage(null);
             setError('');
             const canvas = canvasRef.current;
-            if (!canvas || !currentUser?.photoURL) {
+            if (!canvas) {
                 setError(t('crystal.canvasError'));
                 setIsGenerating(false);
                 return;
@@ -70,125 +67,167 @@ const ConnectionStreakShareModal: React.FC<ConnectionStreakShareModalProps> = ({
                 return;
             }
 
-            const width = 1080;
-            const height = 1920;
-            canvas.width = width;
-            canvas.height = height;
+            const W = 1080;
+            const H = 1920;
+            canvas.width = W;
+            canvas.height = H;
 
-            // 1. Draw Background
-            const streak = crystalData.streak;
-            if (streak <= 3) {
-                ctx.fillStyle = '#374151'; // Gray-700
-            } else if (streak <= 6) {
-                const gradient = ctx.createLinearGradient(0, 0, width, height);
-                gradient.addColorStop(0, '#3B82F6'); // blue-500
-                gradient.addColorStop(1, '#6366F1'); // indigo-500
-                ctx.fillStyle = gradient;
-            } else {
-                const gradient = ctx.createLinearGradient(0, 0, width, height);
-                gradient.addColorStop(0, '#F59E0B'); // amber-500
-                gradient.addColorStop(0.5, '#EF4444'); // red-500
-                gradient.addColorStop(1, '#8B5CF6'); // violet-500
-                ctx.fillStyle = gradient;
-            }
-            ctx.fillRect(0, 0, width, height);
+            const userImg = new Image();
+            const otherUserImg = new Image();
+            userImg.crossOrigin = "anonymous";
+            otherUserImg.crossOrigin = "anonymous";
+
+            const userImgPromise = new Promise<void>((resolve, reject) => {
+                userImg.onload = () => resolve();
+                userImg.onerror = () => reject(new Error('Failed to load user image.'));
+                // Add cache-busting param
+                userImg.src = `${currentUser.photoURL}?${new Date().getTime()}`;
+            });
+
+            const otherUserImgPromise = new Promise<void>((resolve, reject) => {
+                otherUserImg.onload = () => resolve();
+                otherUserImg.onerror = () => reject(new Error('Failed to load other user image.'));
+                 // Add cache-busting param
+                otherUserImg.src = `${otherUser.avatar}?${new Date().getTime()}`;
+            });
 
             try {
-                // 2. Draw Profile Pictures
-                const [userImg, otherUserImg] = await Promise.all([
-                    loadImage(currentUser.photoURL),
-                    loadImage(otherUser.avatar)
-                ]);
-
-                const avatarSize = 350;
-                const avatarY = height * 0.25;
-                const avatarSpacing = 20;
-
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(width / 2 - avatarSize / 2 - avatarSpacing / 2, avatarY, avatarSize / 2, 0, Math.PI * 2, true);
-                ctx.closePath();
-                ctx.clip();
-                ctx.drawImage(userImg, width / 2 - avatarSize - avatarSpacing / 2, avatarY - avatarSize / 2, avatarSize, avatarSize);
-                ctx.restore();
-                
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(width / 2 + avatarSize / 2 + avatarSpacing / 2, avatarY, avatarSize / 2, 0, Math.PI * 2, true);
-                ctx.closePath();
-                ctx.clip();
-                ctx.drawImage(otherUserImg, width / 2 + avatarSpacing / 2, avatarY - avatarSize / 2, avatarSize, avatarSize);
-                ctx.restore();
-
-                // Add white borders
-                ctx.strokeStyle = 'white';
-                ctx.lineWidth = 10;
-                ctx.beginPath();
-                ctx.arc(width / 2 - avatarSize / 2 - avatarSpacing / 2, avatarY, avatarSize / 2, 0, Math.PI * 2, true);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.arc(width / 2 + avatarSize / 2 + avatarSpacing / 2, avatarY, avatarSize / 2, 0, Math.PI * 2, true);
-                ctx.stroke();
-
+                await Promise.all([userImgPromise, otherUserImgPromise]);
             } catch (e) {
-                console.error("Error loading images for canvas:", e);
+                console.error(e);
                 setError(t('crystal.imageLoadError'));
+                setIsGenerating(false);
+                return;
             }
 
-            // 3. Draw Text
-            ctx.fillStyle = 'white';
-            ctx.textAlign = 'center';
-            ctx.shadowColor = 'rgba(0,0,0,0.5)';
-            ctx.shadowBlur = 10;
-            ctx.shadowOffsetY = 5;
+            // --- Drawing ---
+            // Background
+            const bgGradient = ctx.createLinearGradient(0, 0, W, H);
+            bgGradient.addColorStop(0, '#0f172a'); // slate-900
+            bgGradient.addColorStop(1, '#1e293b'); // slate-800
+            ctx.fillStyle = bgGradient;
+            ctx.fillRect(0, 0, W, H);
+            
+            // Particles
+            for (let i = 0; i < 150; i++) {
+                ctx.fillStyle = `rgba(253, 224, 71, ${Math.random() * 0.5 + 0.2})`; // yellow-300
+                ctx.beginPath();
+                ctx.arc(Math.random() * W, Math.random() * H, Math.random() * 2.5 + 1, 0, Math.PI * 2);
+                ctx.fill();
+            }
 
-            ctx.font = 'bold 100px sans-serif';
-            ctx.fillText(t('crystal.streakDays', { streak: crystalData.streak }), width / 2, height / 2 + 100);
+            // Avatars
+            const avatarSize = 320;
+            const avatarY = 550;
+            const userAvatarX = W / 2 - avatarSize - 30;
+            const otherAvatarX = W / 2 + 30;
             
-            ctx.font = '70px sans-serif';
-            ctx.fillText(t('crystal.vibe'), width / 2, height / 2 + 220);
+            ctx.save();
+            ctx.shadowColor = 'rgba(250, 204, 21, 0.7)'; // amber-300
+            ctx.shadowBlur = 40;
+            ctx.beginPath();
+            ctx.arc(userAvatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(250, 204, 21, 0.8)'; // amber-300
+            ctx.lineWidth = 8;
+            ctx.stroke();
+            ctx.clip();
+            ctx.drawImage(userImg, userAvatarX, avatarY, avatarSize, avatarSize);
+            ctx.restore();
+
+            ctx.save();
+            ctx.shadowColor = 'rgba(250, 204, 21, 0.7)';
+            ctx.shadowBlur = 40;
+            ctx.beginPath();
+            ctx.arc(otherAvatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(250, 204, 21, 0.8)';
+            ctx.lineWidth = 8;
+            ctx.stroke();
+            ctx.clip();
+            ctx.drawImage(otherUserImg, otherAvatarX, avatarY, avatarSize, avatarSize);
+            ctx.restore();
             
-            // 4. Draw Conecta+ watermark
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-            ctx.font = '40px serif';
+            // Lightning Bolt
+            const boltY = avatarY + avatarSize / 2;
+            const boltStartX = userAvatarX + avatarSize;
+            const boltEndX = otherAvatarX;
+            ctx.save();
+            ctx.shadowColor = '#fef08a'; // yellow-200
+            ctx.shadowBlur = 30;
+            ctx.strokeStyle = '#fde047'; // yellow-400
+            ctx.lineWidth = 15;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(boltStartX, boltY);
+            ctx.lineTo(boltStartX + 60, boltY + 40);
+            ctx.lineTo(boltStartX + 30, boltY);
+            ctx.lineTo(boltStartX + 90, boltY - 40);
+            ctx.lineTo(boltEndX, boltY);
+            ctx.stroke();
+            ctx.restore();
+
+            // Title
+            ctx.font = '70px "Times New Roman", serif';
+            ctx.fillStyle = '#f1f5f9'; // slate-100
             ctx.textAlign = 'center';
-            ctx.fillText(t('crystal.watermark'), width / 2, height - 100);
+            ctx.textBaseline = 'middle';
+            ctx.fillText(t('crystal.shareTitle'), W / 2, 300);
+
+            // Streak Number
+            const streakNumber = crystalData.streak.toString();
+            ctx.font = 'bold 400px "Helvetica Neue", sans-serif';
+            const textGradient = ctx.createLinearGradient(0, 1000, 0, 1400);
+            textGradient.addColorStop(0, '#fcd34d'); // amber-300
+            textGradient.addColorStop(1, '#fbbf24'); // amber-400
+            ctx.fillStyle = textGradient;
+            ctx.shadowColor = 'rgba(0,0,0,0.4)';
+            ctx.shadowBlur = 20;
+            ctx.shadowOffsetX = 8;
+            ctx.shadowOffsetY = 8;
+            ctx.fillText(streakNumber, W / 2, 1150);
+            
+            ctx.shadowColor = 'transparent'; // Reset shadow
+
+            // Subtitle
+            ctx.font = '60px "Helvetica Neue", sans-serif';
+            ctx.fillStyle = '#e2e8f0'; // slate-200
+            ctx.fillText(t('crystal.streakDays', { streak: '' }).trim(), W / 2, 1350);
+
+            // Watermark
+            ctx.font = 'italic 40px "Times New Roman", serif';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.fillText('Vibe', W / 2, H - 100);
 
             setGeneratedImage(canvas.toDataURL('image/png'));
             setIsGenerating(false);
         };
-
+        
         generateImage();
 
     }, [isOpen, crystalData, currentUser, otherUser, t]);
 
     const handlePublish = async () => {
-        if (!generatedImage || !canvasRef.current || !currentUser) return;
+        if (!generatedImage || !currentUser) return;
         
         setIsPublishing(true);
         setError('');
 
         try {
-            canvasRef.current.toBlob(async (blob) => {
-                if (!blob) {
-                    throw new Error('Canvas to Blob conversion failed');
-                }
-                const pulseRef = storageRef(storage, `pulses/${currentUser.uid}/streak_${Date.now()}.png`);
-                await uploadBytes(pulseRef, blob);
-                const downloadURL = await getDownloadURL(pulseRef);
+            const pulseRef = storageRef(storage, `pulses/${currentUser.uid}/streak_${Date.now()}.png`);
+            await uploadString(pulseRef, generatedImage, 'data_url');
+            const downloadURL = await getDownloadURL(pulseRef);
 
-                await addDoc(collection(db, 'pulses'), {
-                    authorId: currentUser.uid,
-                    mediaUrl: downloadURL,
-                    legenda: `${t('crystal.streakDays', { streak: crystalData.streak })} ${t('crystal.vibe')}`,
-                    createdAt: serverTimestamp(),
-                });
+            await addDoc(collection(db, 'pulses'), {
+                authorId: currentUser.uid,
+                mediaUrl: downloadURL,
+                legenda: t('crystal.streakDays', { streak: crystalData.streak }),
+                createdAt: serverTimestamp(),
+            });
 
-                onPulseCreated();
-            }, 'image/png');
+            onPulseCreated();
         } catch (err) {
             console.error(err);
             setError(t('crystal.shareError'));
+        } finally {
             setIsPublishing(false);
         }
     };
@@ -197,6 +236,7 @@ const ConnectionStreakShareModal: React.FC<ConnectionStreakShareModalProps> = ({
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[60]" onClick={onClose}>
+            <canvas ref={canvasRef} style={{ display: 'none' }} />
             <div className="bg-zinc-800 text-white rounded-lg shadow-xl w-full max-w-sm p-4 border border-zinc-700 flex flex-col gap-4" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center">
                     <h3 className="text-lg font-semibold">{t('crystal.shareTitle')}</h3>
@@ -214,8 +254,6 @@ const ConnectionStreakShareModal: React.FC<ConnectionStreakShareModalProps> = ({
                 <Button onClick={handlePublish} disabled={isGenerating || isPublishing || !!error}>
                     {isPublishing ? t('crystal.publishing') : t('crystal.shareAction')}
                 </Button>
-
-                <canvas ref={canvasRef} style={{ display: 'none' }} />
             </div>
         </div>
     );

@@ -16,24 +16,22 @@
     "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js",
     "firebase/storage": "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js",
     "firebase/messaging": "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js",
-    "firebase/": "https://aistudiocdn.com/firebase@^12.5.0/"
+    "firebase/": "https://aistudiocdn.com/firebase@^12.5.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.1"
   }
 }
 </script>
     <!-- OneSignal SDK -->
-    <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async></script>
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
-      window.OneSignal = window.OneSignal || [];
-      OneSignal.push(function() {
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(function(OneSignal) {
         OneSignal.init({
           appId: "c5a6a4de-d3bd-4f08-b196-8cae4a5264dc",
-          safari_web_id: "",
-          notifyButton: {
-            enable: true,
-          },
           allowLocalhostAsSecureOrigin: true,
+        }).then(function() {
+          OneSignal.Slidedown.promptPush();
         });
-        OneSignal.showNativePrompt();
       });
     </script>
 </head>
