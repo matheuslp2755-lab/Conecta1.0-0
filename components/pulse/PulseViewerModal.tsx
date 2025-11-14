@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { auth, db, doc, setDoc, serverTimestamp, collection, onSnapshot } from '../../firebase';
 import { useLanguage } from '../../context/LanguageContext';
 import PulseViewsModal from './PulseViewsModal';
 import MusicPlayer from '../feed/MusicPlayer';
+import AddToMemoryModal from '../post/AddToMemoryModal';
+import CreateMemoryModal from '../profile/CreateMemoryModal';
 
 type Pulse = {
     id: string;
@@ -54,19 +56,19 @@ const NextIcon: React.FC<{className?: string}> = ({ className }) => (
 
 const PulseViewerModal: React.FC<PulseViewerModalProps> = ({ pulses, initialPulseIndex, authorInfo, onClose, onDelete }) => {
     const { t } = useLanguage();
-    // FIX: Cria uma cópia local dos pulses para prevenir problemas com referências circulares no objeto da prop.
     const [localPulses, setLocalPulses] = useState([...pulses]);
     const [currentIndex, setCurrentIndex] = useState(initialPulseIndex);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [viewsCount, setViewsCount] = useState(0);
     const [isViewsModalOpen, setIsViewsModalOpen] = useState(false);
-    // FIX: Cannot find name 'setIsMuted'. Declare isMusicMuted and setIsMuted state variables.
-    const [isMusicMuted, setIsMuted] = useState(false);
+    const [isMusicMuted, setIsMusicMuted] = useState(false);
+    const [isAddToMemoryOpen, setIsAddToMemoryOpen] = useState(false);
+    const [isCreateMemoryOpen, setIsCreateMemoryOpen] = useState(false);
+    const [initialContentForMemory, setInitialContentForMemory] = useState<any>(null);
     
     useEffect(() => {
         setLocalPulses([...pulses]);
-        // Se o pulse atual for deletado externamente, talvez precisemos ajustar o índice.
         if (currentIndex >= pulses.length) {
             setCurrentIndex(Math.max(0, pulses.length - 1));
         }
@@ -78,7 +80,6 @@ const PulseViewerModal: React.FC<PulseViewerModalProps> = ({ pulses, initialPuls
 
     useEffect(() => {
         const recordPulseView = async () => {
-            // Do not record if there's no pulse, no logged-in user, or if the viewer is the author.
             if (!currentPulse || !currentUser || currentUser.uid === currentPulse.authorId) {
                 return;
             }
@@ -91,7 +92,6 @@ const PulseViewerModal: React.FC<PulseViewerModalProps> = ({ pulses, initialPuls
                 });
             } catch (error) {
                 console.error("Error recording pulse view:", error);
-                // Fail silently as this is a background task and should not affect user experience.
             }
         };
 
@@ -117,12 +117,9 @@ const PulseViewerModal: React.FC<PulseViewerModalProps> = ({ pulses, initialPuls
     
     const handleDelete = async () => {
         setIsDeleting(true);
-        // Chama o handler onDelete original, que vai atualizar o estado do pai
         await onDelete(currentPulse);
         setIsDeleting(false);
         setIsDeleteConfirmOpen(false);
-        // O componente pai vai renderizar este modal novamente com a lista de pulses atualizada.
-        // O useEffect vai cuidar da atualização do estado.
     };
 
     const canGoNext = currentIndex < localPulses.length - 1;
@@ -135,6 +132,31 @@ const PulseViewerModal: React.FC<PulseViewerModalProps> = ({ pulses, initialPuls
                 onClose={() => setIsViewsModalOpen(false)}
                 pulseId={currentPulse.id}
             />
+            {isOwner && (
+                <>
+                    <AddToMemoryModal
+                        isOpen={isAddToMemoryOpen}
+                        onClose={() => setIsAddToMemoryOpen(false)}
+                        content={{
+                            id: currentPulse.id,
+                            type: 'pulse',
+                            mediaUrl: currentPulse.mediaUrl,
+                            timestamp: currentPulse.createdAt,
+                        }}
+                        onOpenCreate={(initialContent) => {
+                            setInitialContentForMemory(initialContent);
+                            setIsAddToMemoryOpen(false);
+                            setIsCreateMemoryOpen(true);
+                        }}
+                    />
+                    <CreateMemoryModal
+                        isOpen={isCreateMemoryOpen}
+                        onClose={() => setIsCreateMemoryOpen(false)}
+                        onMemoryCreated={() => { /* Can add toast here */ }}
+                        initialContent={initialContentForMemory}
+                    />
+                </>
+            )}
             <div 
                 className="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-50 select-none"
                 onClick={onClose}
@@ -179,6 +201,9 @@ const PulseViewerModal: React.FC<PulseViewerModalProps> = ({ pulses, initialPuls
                                                 {viewsCount}
                                             </button>
                                         )}
+                                         <button onClick={() => setIsAddToMemoryOpen(true)} className="text-white p-2 rounded-full hover:bg-white/20" title={t('post.addToMemory')}>
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" /></svg>
+                                        </button>
                                         <button 
                                             onClick={() => setIsDeleteConfirmOpen(true)} 
                                             className="text-white p-2 rounded-full hover:bg-white/20"
@@ -205,7 +230,7 @@ const PulseViewerModal: React.FC<PulseViewerModalProps> = ({ pulses, initialPuls
                             <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent">
                                 {currentPulse.musicInfo && (
                                     <div className="mb-2 text-white">
-                                        <MusicPlayer musicInfo={currentPulse.musicInfo} isPlaying={true} isMuted={isMusicMuted} setIsMuted={setIsMuted} />
+                                        <MusicPlayer musicInfo={currentPulse.musicInfo} isPlaying={true} isMuted={isMusicMuted} setIsMuted={setIsMusicMuted} />
                                     </div>
                                 )}
                                 {currentPulse.legenda && (

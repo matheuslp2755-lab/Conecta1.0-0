@@ -3,14 +3,6 @@ import { db, doc, updateDoc } from '../../firebase';
 import MusicSearch from './MusicSearch';
 import { useLanguage } from '../../context/LanguageContext';
 
-type MusicTrackFromAPI = {
-  trackId: number;
-  trackName: string;
-  artistName: string;
-  artworkUrl100: string;
-  previewUrl: string;
-};
-
 type MusicInfo = {
   nome: string;
   artista: string;

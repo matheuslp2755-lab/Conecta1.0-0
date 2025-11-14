@@ -18,7 +18,6 @@ import {
     storageRef,
     uploadString,
     getDownloadURL,
-    // FIX: Import 'uploadBytes' from firebase to handle audio file uploads.
     uploadBytes
 } from '../../firebase';
 import ConnectionCrystal from './ConnectionCrystal';
@@ -532,54 +531,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, isCurre
 
             await batch.commit();
 
-            // Send Push Notification
-            const sendPushNotification = async () => {
-                try {
-                    if (!otherUser || !currentUser) return;
-            
-                    // INSECURE: This is a client-side implementation for demonstration purposes.
-                    // The OneSignal REST API Key MUST be kept on a secure server and notifications
-                    // should be triggered by a backend function (e.g., Cloud Function) for a production app.
-                    const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY;
-                    
-                    if (!ONESIGNAL_REST_API_KEY) {
-                        console.warn("OneSignal REST API Key is not set. Skipping push notification.");
-                        return;
-                    }
-
-                    const recipientDocRef = doc(db, 'users', otherUser.id);
-                    const recipientDoc = await getDoc(recipientDocRef);
-                    
-                    if (recipientDoc.exists()) {
-                        const recipientData = recipientDoc.data();
-                        if (recipientData.oneSignalPlayerId) {
-                            const notificationContent = t('messages.media.audio');
-
-                            const message = {
-                                app_id: "d0307e8d-3a9b-4e71-b414-ebc34e40ff4f",
-                                include_player_ids: [recipientData.oneSignalPlayerId],
-                                headings: { "pt": `Nova mensagem de ${currentUser.displayName}` },
-                                contents: { "pt": notificationContent },
-                                data: { conversationId: conversationId }
-                            };
-            
-                            await fetch('https://onesignal.com/api/v1/notifications', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json; charset=utf-8',
-                                    'Authorization': `Basic ${ONESIGNAL_REST_API_KEY}`,
-                                },
-                                body: JSON.stringify(message),
-                            });
-                            console.log("Push notification sent successfully.");
-                        }
-                    }
-                } catch (error) {
-                    console.error("Error sending push notification:", error);
-                }
-            };
-            sendPushNotification();
-
         } catch (error) {
             console.error("Error sending audio message:", error);
             setUploadError(t('messages.media.uploadError'));
@@ -729,63 +680,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, isCurre
             batch.update(conversationRef, { lastMessage: lastMessageUpdate, timestamp: serverTimestamp(), ...crystalUpdate });
 
             await batch.commit();
-
-            // Send Push Notification via OneSignal
-            const sendPushNotification = async () => {
-                try {
-                    if (!otherUser || !currentUser) return;
-            
-                    // INSECURE: This is a client-side implementation for demonstration purposes.
-                    // The OneSignal REST API Key MUST be kept on a secure server and notifications
-                    // should be triggered by a backend function (e.g., Cloud Function) for a production app.
-                    const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY;
-                    
-                    if (!ONESIGNAL_REST_API_KEY) {
-                        console.warn("OneSignal REST API Key is not set. Skipping push notification.");
-                        return;
-                    }
-    
-                    const recipientDocRef = doc(db, 'users', otherUser.id);
-                    const recipientDoc = await getDoc(recipientDocRef);
-                    
-                    if (recipientDoc.exists()) {
-                        const recipientData = recipientDoc.data();
-                        if (recipientData.oneSignalPlayerId) {
-                            let notificationContent = tempMessageText;
-                            if (!notificationContent) {
-                                if (tempMediaType === 'image') notificationContent = t('messages.media.photo');
-                                else if (tempMediaType === 'video') notificationContent = t('messages.media.video');
-                                else if (tempMediaType === 'audio') notificationContent = t('messages.media.audio');
-                                else notificationContent = t('messages.forwardedPost');
-                            }
-    
-                            const message = {
-                                app_id: "d0307e8d-3a9b-4e71-b414-ebc34e40ff4f",
-                                include_player_ids: [recipientData.oneSignalPlayerId],
-                                headings: { "pt": `Nova mensagem de ${currentUser.displayName}` },
-                                contents: { "pt": notificationContent },
-                                data: { conversationId: conversationId }
-                            };
-            
-                            await fetch('https://onesignal.com/api/v1/notifications', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json; charset=utf-8',
-                                    'Authorization': `Basic ${ONESIGNAL_REST_API_KEY}`,
-                                },
-                                body: JSON.stringify(message),
-                            });
-                            console.log("Push notification sent successfully.");
-                        } else {
-                            console.log("Recipient does not have a OneSignal Player ID.");
-                        }
-                    }
-                } catch (error) {
-                    console.error("Error sending push notification:", error);
-                }
-            };
-    
-            sendPushNotification();
 
         } catch (error) {
             console.error("Error sending message:", error);

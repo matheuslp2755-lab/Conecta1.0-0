@@ -137,7 +137,7 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ musicInfo, isPlaying, isMuted
                 >
                     {isMuted ? <VolumeOffIcon className="w-5 h-5" /> : <VolumeOnIcon className="w-5 h-5" />}
                 </button>
-                <audio ref={audioRef} src={musicInfo.preview} loop preload="metadata" muted={isMuted} />
+                <audio ref={audioRef} src={musicInfo.preview} preload="metadata" muted={isMuted} />
             </div>
         </div>
     );

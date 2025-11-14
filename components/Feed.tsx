@@ -91,6 +91,7 @@ const Feed: React.FC = () => {
   const [initialMessageTarget, setInitialMessageTarget] = useState<{ id: string, username: string, avatar: string } | null>(null);
   const [initialConversationId, setInitialConversationId] = useState<string | null>(null);
   const [playingMusicPostId, setPlayingMusicPostId] = useState<string | null>(null);
+  // FIX: Add state for isMusicMuted to be passed down to Post components.
   const [isMusicMuted, setIsMusicMuted] = useState(false);
 
   useEffect(() => {

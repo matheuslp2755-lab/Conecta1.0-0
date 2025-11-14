@@ -2,7 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { auth, db, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, storage, storageRef, deleteObject, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, where, getDocs, limit, writeBatch, getDoc, setDoc } from '../../firebase';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTimeAgo } from '../../hooks/useTimeAgo';
-import PostViewsModal from './PostViewsModal';
+import PostViewsModal from '../post/PostViewsModal';
+import MusicPlayer from '../feed/MusicPlayer';
+import Button from '../common/Button';
+import AddCaptionModal from '../post/AddCaptionModal';
+import AddMusicModal from '../post/AddMusicModal';
+import AddToMemoryModal from './AddToMemoryModal';
+import CreateMemoryModal from '../profile/CreateMemoryModal';
+
 
 type PostType = {
     id: string;
@@ -13,6 +20,17 @@ type PostType = {
     caption: string;
     likes: string[];
     timestamp: { seconds: number; nanoseconds: number };
+    musicInfo?: {
+      nome: string;
+      artista: string;
+      capa: string;
+      preview: string;
+      startTime?: number;
+    };
+    isVentMode?: boolean;
+    allowedUsers?: string[];
+    duoPartner?: { userId: string; username: string; userAvatar: string; };
+    pendingDuoPartner?: { userId: string; username: string; userAvatar: string; };
 };
 
 type CommentType = {
@@ -27,6 +45,333 @@ type UserSearchResult = {
     id: string;
     username: string;
     avatar: string;
+};
+
+type Follower = {
+    id: string;
+    username: string;
+    avatar: string;
+};
+
+interface ForwardPostModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  post: PostType;
+}
+
+const ForwardPostModal: React.FC<ForwardPostModalProps> = ({ isOpen, onClose, post }) => {
+    const { t } = useLanguage();
+    const currentUser = auth.currentUser;
+    const [following, setFollowing] = useState<Follower[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+    const [isSending, setIsSending] = useState(false);
+
+    useEffect(() => {
+        if (!isOpen) {
+            setSelectedUsers([]);
+            setSearchTerm('');
+            setIsSending(false);
+            return;
+        }
+
+        const fetchFollowing = async () => {
+            if (!currentUser) return;
+            setLoading(true);
+            try {
+                const followingRef = collection(db, 'users', currentUser.uid, 'following');
+                const snapshot = await getDocs(followingRef);
+                const followingData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Follower));
+                setFollowing(followingData);
+            } catch (error) {
+                console.error("Error fetching following list:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchFollowing();
+    }, [isOpen, currentUser]);
+
+    const handleSend = async () => {
+        if (selectedUsers.length === 0 || !currentUser) return;
+        setIsSending(true);
+    
+        const sendPromises = selectedUsers.map(async (recipientId) => {
+            const recipient = following.find(f => f.id === recipientId);
+            if (!recipient) return;
+    
+            const conversationId = [currentUser.uid, recipient.id].sort().join('_');
+            const conversationRef = doc(db, 'conversations', conversationId);
+    
+            try {
+                const conversationSnap = await getDoc(conversationRef);
+                if (!conversationSnap.exists()) {
+                    const currentUserDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                    const currentUserData = currentUserDoc.data();
+                    await setDoc(conversationRef, {
+                        participants: [currentUser.uid, recipient.id],
+                        participantInfo: {
+                            [currentUser.uid]: {
+                                username: currentUserData?.username,
+                                avatar: currentUserData?.avatar,
+                            },
+                            [recipient.id]: {
+                                username: recipient.username,
+                                avatar: recipient.avatar,
+                            }
+                        },
+                        timestamp: serverTimestamp(),
+                    });
+                }
+    
+                const messagesRef = collection(conversationRef, 'messages');
+                await addDoc(messagesRef, {
+                    senderId: currentUser.uid,
+                    text: '',
+                    timestamp: serverTimestamp(),
+                    mediaType: 'forwarded_post',
+                    forwardedPostData: {
+                        postId: post.id,
+                        imageUrl: post.imageUrl,
+                        originalPosterUsername: post.username,
+                        originalPosterAvatar: post.userAvatar,
+                        caption: post.caption,
+                    }
+                });
+    
+                await updateDoc(conversationRef, {
+                    lastMessage: {
+                        senderId: currentUser.uid,
+                        text: t('messages.forwardedPost'),
+                        timestamp: serverTimestamp(),
+                        mediaType: 'forwarded_post',
+                    },
+                    timestamp: serverTimestamp(),
+                });
+            } catch (error) {
+                console.error(`Failed to send post to ${recipient.username}:`, error);
+            }
+        });
+    
+        await Promise.all(sendPromises);
+        setIsSending(false);
+        onClose();
+    };
+
+    const filteredFollowing = following.filter(user =>
+        user.username.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50" onClick={onClose}>
+            <div
+                className="bg-white dark:bg-black rounded-lg shadow-xl w-full max-w-sm border border-zinc-200 dark:border-zinc-800 flex flex-col max-h-[70vh]"
+                onClick={e => e.stopPropagation()}
+            >
+                <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center flex-shrink-0">
+                    <div className="w-8"></div>
+                    <h2 className="text-lg font-semibold">{t('forwardModal.title')}</h2>
+                    <button onClick={onClose} className="text-2xl font-light w-8">&times;</button>
+                </div>
+                <div className="p-2 border-b border-zinc-200 dark:border-zinc-800 flex-shrink-0">
+                    <input
+                        type="text"
+                        placeholder={t('forwardModal.search')}
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        className="w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md py-1.5 px-4 text-sm"
+                    />
+                </div>
+                <div className="flex-grow overflow-y-auto">
+                    {loading ? (
+                        <p className="text-center p-4">{t('messages.loading')}</p>
+                    ) : filteredFollowing.length > 0 ? (
+                        filteredFollowing.map(user => (
+                            <label key={user.id} className="flex items-center p-3 gap-3 hover:bg-zinc-50 dark:hover:bg-zinc-900 cursor-pointer">
+                                <img src={user.avatar} alt={user.username} className="w-11 h-11 rounded-full object-cover" />
+                                <span className="font-semibold text-sm flex-grow">{user.username}</span>
+                                <input
+                                    type="checkbox"
+                                    checked={selectedUsers.includes(user.id)}
+                                    onChange={() => {
+                                        setSelectedUsers(prev =>
+                                            prev.includes(user.id)
+                                                ? prev.filter(id => id !== user.id)
+                                                : [...prev, user.id]
+                                        );
+                                    }}
+                                    className="w-5 h-5 text-sky-600 bg-zinc-100 border-zinc-300 rounded focus:ring-sky-500"
+                                />
+                            </label>
+                        ))
+                    ) : (
+                        <p className="text-center p-4 text-sm text-zinc-500">
+                            {following.length === 0 ? t('forwardModal.noFollowing') : t('forwardModal.noResults')}
+                        </p>
+                    )}
+                </div>
+                <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex-shrink-0">
+                    <Button onClick={handleSend} disabled={isSending || selectedUsers.length === 0}>
+                        {isSending ? t('forwardModal.sending') : t('forwardModal.send')}
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+interface DuoPhotoModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    post: PostType;
+}
+  
+const DuoPhotoModal: React.FC<DuoPhotoModalProps> = ({ isOpen, onClose, post }) => {
+    const { t } = useLanguage();
+    const currentUser = auth.currentUser;
+    const [following, setFollowing] = useState<Follower[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedUser, setSelectedUser] = useState<Follower | null>(null);
+    const [isSending, setIsSending] = useState(false);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (!isOpen) {
+            setSelectedUser(null);
+            setSearchTerm('');
+            setIsSending(false);
+            setError('');
+            return;
+        }
+
+        const fetchFollowing = async () => {
+            if (!currentUser) return;
+            setLoading(true);
+            try {
+                const followingRef = collection(db, 'users', currentUser.uid, 'following');
+                const snapshot = await getDocs(followingRef);
+                const followingData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Follower));
+                setFollowing(followingData);
+            } catch (error) {
+                console.error("Error fetching following list:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchFollowing();
+    }, [isOpen, currentUser]);
+
+    const handleSendRequest = async () => {
+        if (!selectedUser || !currentUser) return;
+        if (post.duoPartner) {
+            setError(t('duoModal.alreadyPartnered'));
+            return;
+        }
+        if (post.pendingDuoPartner) {
+            setError(t('duoModal.requestPending'));
+            return;
+        }
+        
+        setIsSending(true);
+        setError('');
+
+        try {
+            const postRef = doc(db, 'posts', post.id);
+            await updateDoc(postRef, {
+                pendingDuoPartner: {
+                    userId: selectedUser.id,
+                    username: selectedUser.username,
+                    userAvatar: selectedUser.avatar
+                }
+            });
+
+            const notificationRef = doc(collection(db, 'users', selectedUser.id, 'notifications'));
+            await setDoc(notificationRef, {
+                type: 'duo_request',
+                fromUserId: currentUser.uid,
+                fromUsername: currentUser.displayName,
+                fromUserAvatar: currentUser.photoURL,
+                postId: post.id,
+                timestamp: serverTimestamp(),
+                read: false,
+            });
+
+            onClose();
+        } catch (error) {
+            console.error("Error sending duo request:", error);
+            setError(t('duoModal.requestError'));
+        } finally {
+            setIsSending(false);
+        }
+    };
+
+    const filteredFollowing = following.filter(user =>
+        user.username.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50" onClick={onClose}>
+            <div
+                className="bg-white dark:bg-black rounded-lg shadow-xl w-full max-w-sm border border-zinc-200 dark:border-zinc-800 flex flex-col max-h-[70vh]"
+                onClick={e => e.stopPropagation()}
+            >
+                <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center flex-shrink-0">
+                    <div className="w-8"></div>
+                    <h2 className="text-lg font-semibold">{t('duoModal.title')}</h2>
+                    <button onClick={onClose} className="text-2xl font-light w-8">&times;</button>
+                </div>
+                <div className="p-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                    <p>{t('duoModal.description')}</p>
+                </div>
+                <div className="p-2 border-y border-zinc-200 dark:border-zinc-800 flex-shrink-0">
+                    <input
+                        type="text"
+                        placeholder={t('forwardModal.search')}
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        className="w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md py-1.5 px-4 text-sm"
+                    />
+                </div>
+                <div className="flex-grow overflow-y-auto">
+                    {loading ? (
+                        <p className="text-center p-4">{t('messages.loading')}</p>
+                    ) : filteredFollowing.length > 0 ? (
+                        filteredFollowing.map(user => (
+                            <label key={user.id} className="flex items-center p-3 gap-3 hover:bg-zinc-50 dark:hover:bg-zinc-900 cursor-pointer">
+                                <img src={user.avatar} alt={user.username} className="w-11 h-11 rounded-full object-cover" />
+                                <span className="font-semibold text-sm flex-grow">{user.username}</span>
+                                <input
+                                    type="radio"
+                                    name="duo-partner"
+                                    checked={selectedUser?.id === user.id}
+                                    onChange={() => setSelectedUser(user)}
+                                    className="w-5 h-5 text-sky-600 bg-zinc-100 border-zinc-300 focus:ring-sky-500"
+                                />
+                            </label>
+                        ))
+                    ) : (
+                        <p className="text-center p-4 text-sm text-zinc-500">
+                            {following.length === 0 ? t('duoModal.noFollowing') : t('forwardModal.noResults')}
+                        </p>
+                    )}
+                </div>
+                <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex-shrink-0">
+                    {error && <p className="text-red-500 text-xs text-center mb-2">{error}</p>}
+                    <Button onClick={handleSendRequest} disabled={isSending || !selectedUser}>
+                        {isSending ? t('duoModal.sending') : t('duoModal.sendRequest')}
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 const LikeIcon: React.FC<{className?: string, isLiked: boolean, title: string}> = ({ className, isLiked, title }) => (
@@ -48,12 +393,15 @@ const MoreIcon: React.FC<{className?: string, title: string}> = ({ className, ti
 interface PostProps {
   post: PostType;
   onPostDeleted: (postId: string) => void;
+  playingMusicPostId: string | null;
+  setPlayingMusicPostId: (postId: string | null) => void;
 }
 
-const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
+const Post: React.FC<PostProps> = ({ post, onPostDeleted, playingMusicPostId, setPlayingMusicPostId }) => {
   const currentUser = auth.currentUser;
   const { t } = useLanguage();
   const { formatTimestamp } = useTimeAgo();
+  const [postData, setPostData] = useState<PostType>(post);
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes.length);
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
@@ -67,6 +415,15 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
   const [isViewsModalOpen, setIsViewsModalOpen] = useState(false);
   const [viewsCount, setViewsCount] = useState(0);
   const postRef = useRef<HTMLElement>(null);
+  const [isForwardModalOpen, setIsForwardModalOpen] = useState(false);
+  const [isDuoPhotoModalOpen, setIsDuoPhotoModalOpen] = useState(false);
+  const [isAddCaptionModalOpen, setIsAddCaptionModalOpen] = useState(false);
+  const [isAddMusicModalOpen, setIsAddMusicModalOpen] = useState(false);
+  const [isMusicMuted, setIsMusicMuted] = useState(false);
+  const [isAddToMemoryOpen, setIsAddToMemoryOpen] = useState(false);
+  const [isCreateMemoryOpen, setIsCreateMemoryOpen] = useState(false);
+  const [initialContentForMemory, setInitialContentForMemory] = useState<any>(null);
+
 
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionResults, setMentionResults] = useState<UserSearchResult[]>([]);
@@ -74,15 +431,19 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
   const mentionStartPosition = useRef<number | null>(null);
   const commentInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    setPostData(post);
+    setLikesCount(post.likes.length);
+  }, [post]);
 
   useEffect(() => {
     if (currentUser) {
-        setIsLiked(post.likes.includes(currentUser.uid));
+        setIsLiked(postData.likes.includes(currentUser.uid));
     }
-  }, [post.likes, currentUser]);
+  }, [postData.likes, currentUser]);
 
   useEffect(() => {
-    const commentsRef = collection(db, 'posts', post.id, 'comments');
+    const commentsRef = collection(db, 'posts', postData.id, 'comments');
     const q = query(commentsRef, orderBy('timestamp', 'desc'));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -90,17 +451,17 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
     });
 
     return () => unsubscribe();
-  }, [post.id]);
-
+  }, [postData.id]);
+  
   useEffect(() => {
-    if (!postRef.current || !currentUser || currentUser.uid === post.userId) {
+    if (!postRef.current || !currentUser || currentUser.uid === postData.userId) {
         return;
     }
 
     const observer = new IntersectionObserver(
         async ([entry]) => {
             if (entry.isIntersecting) {
-                const viewRef = doc(db, 'posts', post.id, 'views', currentUser.uid);
+                const viewRef = doc(db, 'posts', postData.id, 'views', currentUser.uid);
                 await setDoc(viewRef, {
                     userId: currentUser.uid,
                     viewedAt: serverTimestamp()
@@ -113,63 +474,100 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
         }
     );
 
-    observer.observe(postRef.current);
+    const currentPostRef = postRef.current;
+    observer.observe(currentPostRef);
 
     return () => {
-        if(postRef.current) {
+        if(currentPostRef) {
             // eslint-disable-next-line react-hooks/exhaustive-deps
-            observer.unobserve(postRef.current);
+            observer.unobserve(currentPostRef);
         }
     };
-  }, [post.id, post.userId, currentUser]);
+  }, [postData.id, postData.userId, currentUser]);
 
   useEffect(() => {
-    const viewsRef = collection(db, 'posts', post.id, 'views');
+    if (!postData.musicInfo) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setPlayingMusicPostId(postData.id);
+        } else {
+          if (playingMusicPostId === postData.id) {
+            setPlayingMusicPostId(null);
+          }
+        }
+      },
+      {
+        threshold: 0.75,
+      }
+    );
+    
+    const currentPostRef = postRef.current;
+    if (currentPostRef) {
+      observer.observe(currentPostRef);
+    }
+
+    return () => {
+      if (currentPostRef) {
+        observer.unobserve(currentPostRef);
+      }
+    };
+  }, [postData.id, postData.musicInfo, setPlayingMusicPostId, playingMusicPostId]);
+
+  useEffect(() => {
+    const viewsRef = collection(db, 'posts', postData.id, 'views');
     const unsubscribe = onSnapshot(viewsRef, (snapshot) => {
         setViewsCount(snapshot.size);
     });
 
     return () => unsubscribe();
-  }, [post.id]);
-  
+  }, [postData.id]);
+
   const handleLikeToggle = async () => {
     if (!currentUser) return;
     
-    const postRef = doc(db, 'posts', post.id);
+    const postDocRef = doc(db, 'posts', postData.id);
     const originalIsLiked = isLiked;
-    const originalLikesCount = likesCount;
+    const originalLikes = [...postData.likes];
 
     // Optimistic update
+    const newLikes = originalIsLiked
+        ? postData.likes.filter(uid => uid !== currentUser.uid)
+        : [...postData.likes, currentUser.uid];
+    
     setIsLiked(!originalIsLiked);
-    setLikesCount(originalIsLiked ? originalLikesCount - 1 : originalLikesCount + 1);
+    setLikesCount(newLikes.length);
+    setPostData(prev => ({ ...prev, likes: newLikes }));
 
     try {
         if (originalIsLiked) {
-            await updateDoc(postRef, { likes: arrayRemove(currentUser.uid) });
+            await updateDoc(postDocRef, { likes: arrayRemove(currentUser.uid) });
         } else {
-            await updateDoc(postRef, { likes: arrayUnion(currentUser.uid) });
+            await updateDoc(postDocRef, { likes: arrayUnion(currentUser.uid) });
         }
     } catch (error) {
         console.error("Error toggling like:", error);
         // Revert on error
         setIsLiked(originalIsLiked);
-        setLikesCount(originalLikesCount);
+        setLikesCount(originalLikes.length);
+        setPostData(prev => ({ ...prev, likes: originalLikes }));
     }
   };
 
   const handleDelete = async () => {
-    if (currentUser?.uid !== post.userId) return;
+    if (currentUser?.uid !== postData.userId) return;
 
     setIsDeleting(true);
     try {
-        const imagePath = decodeURIComponent(post.imageUrl.split('/o/')[1].split('?')[0]);
+        const imagePath = decodeURIComponent(postData.imageUrl.split('/o/')[1].split('?')[0]);
         const imageRef = storageRef(storage, imagePath);
-        const postRef = doc(db, 'posts', post.id);
+        const postDocRef = doc(db, 'posts', postData.id);
 
-        await deleteDoc(postRef);
+        await deleteDoc(postDocRef);
         await deleteObject(imageRef);
         
-        onPostDeleted(post.id);
+        onPostDeleted(postData.id);
 
     } catch (error) {
         console.error("Error deleting post:", error);
@@ -197,7 +595,7 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
         const currentUsername = userDoc.data().username;
 
         const batch = writeBatch(db);
-        const commentsRef = collection(db, 'posts', post.id, 'comments');
+        const commentsRef = collection(db, 'posts', postData.id, 'comments');
         const newCommentRef = doc(commentsRef);
         
         batch.set(newCommentRef, {
@@ -224,7 +622,7 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
                             fromUserId: currentUser.uid,
                             fromUsername: currentUsername,
                             fromUserAvatar: currentUser.photoURL,
-                            postId: post.id,
+                            postId: postData.id,
                             commentText: commentText.length > 100 ? `${commentText.substring(0, 97)}...` : commentText,
                             timestamp: serverTimestamp(),
                             read: false,
@@ -247,7 +645,7 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
 
     setIsDeletingComment(true);
     try {
-        const commentRef = doc(db, 'posts', post.id, 'comments', commentToDeleteId);
+        const commentRef = doc(db, 'posts', postData.id, 'comments', commentToDeleteId);
         await deleteDoc(commentRef);
         setIsCommentDeleteConfirmOpen(false);
         setCommentToDeleteId(null);
@@ -344,15 +742,61 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
     <>
         <article ref={postRef} className="bg-white dark:bg-black border border-zinc-300 dark:border-zinc-800 rounded-lg">
         <div className="flex items-center p-3">
-            <img src={post.userAvatar} alt={post.username} className="w-8 h-8 rounded-full object-cover" />
-            <span className="font-semibold text-sm ml-3">{post.username}</span>
-            {currentUser?.uid === post.userId && (
+            {postData.duoPartner ? (
+                <>
+                    <div className="flex -space-x-4">
+                        <img src={postData.userAvatar} alt={postData.username} className="w-8 h-8 rounded-full object-cover border-2 border-white dark:border-black" />
+                        <img src={postData.duoPartner.userAvatar} alt={postData.duoPartner.username} className="w-8 h-8 rounded-full object-cover border-2 border-white dark:border-black" />
+                    </div>
+                    <span className="font-semibold text-sm ml-3">{postData.username} {t('post.and')} {postData.duoPartner.username}</span>
+                </>
+            ) : (
+                <>
+                    <img src={postData.userAvatar} alt={postData.username} className="w-8 h-8 rounded-full object-cover" />
+                    <span className="font-semibold text-sm ml-3">{postData.username}</span>
+                </>
+            )}
+            {currentUser?.uid === postData.userId && (
                  <div className="ml-auto relative">
                     <button onClick={() => setIsOptionsOpen(prev => !prev)}>
                         <MoreIcon className="w-6 h-6" title={t('post.moreOptions')} />
                     </button>
                     {isOptionsOpen && (
-                         <div className="absolute right-0 top-full mt-2 w-40 bg-white dark:bg-zinc-950 rounded-md shadow-lg border dark:border-zinc-800 z-10 py-1">
+                         <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-zinc-950 rounded-md shadow-lg border dark:border-zinc-800 z-10 py-1">
+                            {!postData.caption?.trim() && (
+                                <button
+                                    onClick={() => {
+                                        setIsAddCaptionModalOpen(true);
+                                        setIsOptionsOpen(false);
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                                >
+                                    {t('post.addCaption')}
+                                </button>
+                            )}
+                            {!postData.musicInfo && (
+                                <button
+                                    onClick={() => {
+                                        setIsAddMusicModalOpen(true);
+                                        setIsOptionsOpen(false);
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                                >
+                                    {t('post.addMusic')}
+                                </button>
+                            )}
+                            <button onClick={() => { setIsAddToMemoryOpen(true); setIsOptionsOpen(false); }} className="w-full text-left px-4 py-2 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-900">{t('post.addToMemory')}</button>
+                            {!postData.duoPartner && !postData.pendingDuoPartner && (
+                                <button
+                                    onClick={() => {
+                                        setIsDuoPhotoModalOpen(true);
+                                        setIsOptionsOpen(false);
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                                >
+                                    {t('post.duoPhoto')}
+                                </button>
+                            )}
                             <button 
                                 onClick={() => {
                                     setIsDeleteConfirmOpen(true);
@@ -369,8 +813,14 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
         </div>
         
         <div>
-            <img src={post.imageUrl} alt="Post content" className="w-full object-cover" />
+            <img src={postData.imageUrl} alt="Post content" className="w-full object-cover" />
         </div>
+        
+        {postData.musicInfo && (
+            <div className="bg-zinc-50 dark:bg-zinc-950 border-y border-zinc-200 dark:border-zinc-800">
+                <MusicPlayer musicInfo={postData.musicInfo} isPlaying={playingMusicPostId === postData.id} isMuted={isMusicMuted} setIsMuted={setIsMusicMuted} />
+            </div>
+        )}
 
         <div className="p-4">
             <div className="flex items-center gap-4 mb-2">
@@ -380,18 +830,17 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
                 <button>
                     <CommentIcon title={t('post.comment')} className="w-6 h-6 hover:text-zinc-500 dark:hover:text-zinc-400" />
                 </button>
-                <button>
-                    <ShareIcon title={t('post.share')} className="w-6 h-6 hover:text-zinc-500 dark:hover:text-zinc-400" />
+                <button onClick={() => setIsForwardModalOpen(true)}>
+                    <ShareIcon title={t('post.forward')} className="w-6 h-6 hover:text-zinc-500 dark:hover:text-zinc-400" />
                 </button>
             </div>
-
             <div className="text-sm space-y-1">
                 <div className="flex items-center gap-2 font-semibold">
                     <span>{likesCount.toLocaleString()} {t('post.likes')}</span>
                     {(viewsCount > 0) && (
                         <>
                             <span className="text-zinc-400 dark:text-zinc-600">•</span>
-                            {currentUser?.uid === post.userId ? (
+                            {currentUser?.uid === postData.userId ? (
                                 <button onClick={() => setIsViewsModalOpen(true)} className="hover:underline">
                                     {viewsCount.toLocaleString()} {viewsCount === 1 ? t('post.viewSingular') : t('post.viewPlural')}
                                 </button>
@@ -401,17 +850,19 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
                         </>
                     )}
                 </div>
-                <p>
-                    <span className="font-semibold mr-2">{post.username}</span>
-                    {renderTextWithMentions(post.caption)}
-                </p>
+                {postData.caption && (
+                    <p>
+                        <span className="font-semibold mr-2">{postData.username}</span>
+                        {renderTextWithMentions(postData.caption)}
+                    </p>
+                )}
                  {comments.slice(0, 2).reverse().map(comment => (
                     <div key={comment.id} className="flex items-center justify-between group">
                          <p className="flex-grow pr-2">
                              <span className="font-semibold mr-2">{comment.username}</span>
                              {renderTextWithMentions(comment.text)}
                          </p>
-                         {(currentUser?.uid === comment.userId || currentUser?.uid === post.userId) && (
+                         {(currentUser?.uid === comment.userId || currentUser?.uid === postData.userId) && (
                               <button 
                                  onClick={() => {
                                      setCommentToDeleteId(comment.id);
@@ -433,7 +884,7 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
                     {t('post.viewAllComments', { count: comments.length })}
                 </p>
             )}
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 uppercase mt-2">{formatTimestamp(post.timestamp)}</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 uppercase mt-2">{formatTimestamp(postData.timestamp)}</p>
         </div>
 
         <div className="relative border-t border-zinc-200 dark:border-zinc-800 px-4 py-2">
@@ -472,12 +923,69 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
             </form>
         </div>
         </article>
+        
+        <ForwardPostModal
+            isOpen={isForwardModalOpen}
+            onClose={() => setIsForwardModalOpen(false)}
+            post={postData}
+        />
+        
+        <DuoPhotoModal
+            isOpen={isDuoPhotoModalOpen}
+            onClose={() => setIsDuoPhotoModalOpen(false)}
+            post={postData}
+        />
 
         <PostViewsModal
             isOpen={isViewsModalOpen}
             onClose={() => setIsViewsModalOpen(false)}
-            postId={post.id}
+            postId={postData.id}
         />
+        
+        <AddCaptionModal
+            isOpen={isAddCaptionModalOpen}
+            onClose={() => setIsAddCaptionModalOpen(false)}
+            postId={postData.id}
+            onCaptionSaved={(newCaption) => {
+                setPostData(prev => ({ ...prev, caption: newCaption }));
+                setIsAddCaptionModalOpen(false);
+            }}
+        />
+        <AddMusicModal
+            isOpen={isAddMusicModalOpen}
+            onClose={() => setIsAddMusicModalOpen(false)}
+            postId={postData.id}
+            onMusicAdded={(newMusicInfo) => {
+                setPostData(prev => ({ ...prev, musicInfo: newMusicInfo }));
+                setIsAddMusicModalOpen(false);
+            }}
+        />
+        
+        {currentUser?.uid === postData.userId && (
+           <>
+            <AddToMemoryModal
+                isOpen={isAddToMemoryOpen}
+                onClose={() => setIsAddToMemoryOpen(false)}
+                content={{
+                    id: postData.id,
+                    type: 'post',
+                    mediaUrl: postData.imageUrl,
+                    timestamp: postData.timestamp,
+                }}
+                onOpenCreate={(initialContent) => {
+                    setInitialContentForMemory(initialContent);
+                    setIsAddToMemoryOpen(false);
+                    setIsCreateMemoryOpen(true);
+                }}
+            />
+            <CreateMemoryModal
+                isOpen={isCreateMemoryOpen}
+                onClose={() => setIsCreateMemoryOpen(false)}
+                onMemoryCreated={() => { /* Can add toast here */ }}
+                initialContent={initialContentForMemory}
+            />
+           </>
+        )}
 
         {isCommentDeleteConfirmOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">

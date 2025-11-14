@@ -31,6 +31,9 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useCall } from '../../context/CallContext';
 import ProfileMusicPlayer from './ProfileMusicPlayer';
 import FollowersModal from './FollowersModal';
+import MemoriesBar from './MemoriesBar';
+import MemoryViewerModal from './MemoryViewerModal';
+import CreateMemoryModal from './CreateMemoryModal';
 
 const Spinner: React.FC = () => (
     <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-sky-500"></div>
@@ -102,12 +105,19 @@ type Pulse = {
     allowedUsers?: string[];
 };
 
+type Memory = {
+    id: string;
+    name: string;
+    coverUrl: string;
+};
+
 const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => {
     const { t } = useLanguage();
     const { startCall, activeCall } = useCall();
     const [user, setUser] = useState<ProfileUserData | null>(null);
     const [posts, setPosts] = useState<Post[]>([]);
     const [pulses, setPulses] = useState<Pulse[]>([]);
+    const [memories, setMemories] = useState<Memory[]>([]);
     const [stats, setStats] = useState({ posts: 0, followers: 0, following: 0 });
     const [isFollowing, setIsFollowing] = useState(false);
     const [followRequestSent, setFollowRequestSent] = useState(false);
@@ -118,6 +128,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
     const [viewingPulse, setViewingPulse] = useState<Pulse | null>(null);
     const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
     const [followModalMode, setFollowModalMode] = useState<'followers' | 'following'>('followers');
+    const [isCreateMemoryOpen, setIsCreateMemoryOpen] = useState(false);
+    const [viewingMemory, setViewingMemory] = useState<Memory | null>(null);
     const currentUser = auth.currentUser;
 
     useEffect(() => {
@@ -138,16 +150,18 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
             const followersQuery = collection(db, 'users', userId, 'followers');
             const followingQuery = collection(db, 'users', userId, 'following');
             const pulsesQuery = query(collection(db, 'pulses'), where('authorId', '==', userId));
+            const memoriesQuery = collection(db, 'users', userId, 'memories');
 
             const postsQuery = query(collection(db, 'posts'), where('userId', '==', userId));
             const duoPostsQuery = query(collection(db, 'posts'), where('duoPartner.userId', '==', userId));
             
-            const [followersSnap, followingSnap, pulsesSnap, postsSnap, duoPostsSnap] = await Promise.all([
+            const [followersSnap, followingSnap, pulsesSnap, postsSnap, duoPostsSnap, memoriesSnap] = await Promise.all([
                 getDocs(followersQuery),
                 getDocs(followingQuery),
                 getDocs(pulsesQuery),
                 getDocs(postsQuery),
-                getDocs(duoPostsQuery)
+                getDocs(duoPostsQuery),
+                getDocs(memoriesQuery),
             ]);
 
             const combinedPostDocs = [...postsSnap.docs, ...duoPostsSnap.docs];
@@ -156,6 +170,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
             const allUserPosts = Array.from(postsMap.values());
             
             setStats({ posts: allUserPosts.length, followers: followersSnap.size, following: followingSnap.size });
+
+            const memoriesData = memoriesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Memory));
+            setMemories(memoriesData);
 
             let userIsFollowing = false;
             if (currentUser && currentUser.uid !== userId) {
@@ -592,6 +609,14 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
                     </div>
                 </div>
             </header>
+             <div className="mb-8">
+                <MemoriesBar 
+                    memories={memories}
+                    isOwner={currentUser?.uid === userId}
+                    onViewMemory={(memory) => setViewingMemory(memory)}
+                    onCreateMemory={() => setIsCreateMemoryOpen(true)}
+                />
+            </div>
             {renderContent()}
         </div>
         {user && (
@@ -623,6 +648,23 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
             userId={userId}
             mode={followModalMode}
         />
+        <CreateMemoryModal
+            isOpen={isCreateMemoryOpen}
+            onClose={() => setIsCreateMemoryOpen(false)}
+            onMemoryCreated={() => {
+                // No need to manually refetch, onSnapshot will handle it.
+            }}
+        />
+        {viewingMemory && user && (
+            <MemoryViewerModal
+                memory={viewingMemory}
+                authorInfo={{ id: userId, username: user.username, avatar: user.avatar }}
+                onClose={() => setViewingMemory(null)}
+                onDeleteMemory={(deletedId) => {
+                    setMemories(prev => prev.filter(m => m.id !== deletedId));
+                }}
+            />
+        )}
         </>
     );
 };

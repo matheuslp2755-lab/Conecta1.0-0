@@ -1,7 +1,7 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
-// The content of locales/pt.json is embedded here to fix module loading issues.
-const messages = {
+// Embedding JSON content to avoid module resolution issues
+const ptMessages = {
   "common": {
     "online": "Online",
     "cancel": "Cancelar",
@@ -70,9 +70,8 @@ const messages = {
   "post": {
     "like": "Curtir",
     "comment": "Comentar",
+    "share": "Compartilhar Publicação",
     "forward": "Encaminhar",
-    "duoPhoto": "Foto em Dupla",
-    "and": "e",
     "moreOptions": "Mais opções",
     "delete": "Excluir",
     "likes": "curtidas",
@@ -90,8 +89,11 @@ const messages = {
     "viewPlural": "visualizações",
     "viewedBy": "Visto por",
     "noViews": "Nenhuma visualização ainda.",
+    "duoPhoto": "Foto em Dupla",
+    "and": "e",
     "addCaption": "Adicionar Legenda",
-    "addMusic": "Adicionar Música"
+    "addMusic": "Adicionar Música",
+    "addToMemory": "Adicionar à Lembrança"
   },
   "time": {
     "seconds": "há {count}s",
@@ -156,8 +158,7 @@ const messages = {
     "search": "Buscar",
     "searching": "Buscando...",
     "musicNoResults": "Nenhuma música encontrada.",
-    "selectMusic": "Selecionar música",
-    "publishError": "Falha ao criar a publicação. Por favor, tente novamente."
+    "selectMusic": "Selecionar música"
   },
   "messages": {
     "title": "Mensagens",
@@ -299,16 +300,6 @@ const messages = {
       "verified": "Meta Verified"
     }
   },
-  "musicSearch": {
-    "fetchError": "Falha ao buscar músicas",
-    "searchError": "Ocorreu um erro durante a busca.",
-    "trimInstructions": "Arraste para selecionar o trecho de 15 segundos.",
-    "done": "Concluir"
-  },
-  "musicPlayer": {
-    "play": "Tocar",
-    "pause": "Pausar"
-  },
   "call": {
     "call": "Ligar",
     "calling": "Ligando para {username}...",
@@ -351,32 +342,440 @@ const messages = {
   },
   "addMusicModal": {
     "title": "Adicionar Música"
+  },
+  "musicSearch": {
+    "fetchError": "Falha ao buscar músicas",
+    "searchError": "Ocorreu um erro durante a busca.",
+    "trimInstructions": "Arraste para selecionar o trecho de 15 segundos.",
+    "done": "Concluir"
+  },
+  "musicPlayer": {
+    "play": "Tocar",
+    "pause": "Pausar"
+  },
+   "memories": {
+    "new": "Nova",
+    "add": "Adicionar",
+    "title": "Lembranças",
+    "edit": "Editar Lembrança",
+    "delete": "Excluir Lembrança",
+    "deleteConfirm": "Tem certeza que deseja excluir esta lembrança? Esta ação não pode ser desfeita.",
+    "selectContent": "Selecionar Conteúdo",
+    "next": "Avançar",
+    "name": "Nome",
+    "editCover": "Editar capa",
+    "create": "Criar",
+    "save": "Salvar",
+    "selectItems": "Selecione os posts e pulses que você quer adicionar.",
+    "noContent": "Você não tem posts ou pulses para adicionar.",
+    "memoryName": "Nome da Lembrança",
+    "selectCover": "Selecione uma capa",
+    "creating": "Criando...",
+    "saving": "Salvando...",
+    "error": "Ocorreu um erro. Tente novamente.",
+    "addToMemoryTitle": "Adicionar à Lembrança",
+    "createNew": "Criar nova Lembrança",
+    "added": "Adicionado!"
   }
 };
 
+const enMessages = {
+  "common": {
+    "online": "Online",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "you": "You",
+    "user": "User"
+  },
+  "login": {
+    "title": "Vibe",
+    "emailLabel": "Email address",
+    "passwordLabel": "Password",
+    "loginButton": "Log In",
+    "loggingInButton": "Logging In...",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "signUpLink": "Sign up",
+    "getTheApp": "Get the app.",
+    "error": "Failed to log in. Please check your email and password.",
+    "appStoreAlt": "Download on the App Store",
+    "googlePlayAlt": "Get it on Google Play"
+  },
+  "signup": {
+    "title": "Vibe",
+    "subtitle": "Sign up to see photos and videos from your friends.",
+    "emailLabel": "Email address",
+    "usernameLabel": "Username",
+    "passwordLabel": "Password",
+    "signUpButton": "Sign Up",
+    "signingUpButton": "Signing Up...",
+    "haveAccount": "Have an account?",
+    "logInLink": "Log in",
+    "getTheApp": "Get the app.",
+    "emailInUseError": "This email is already in use.",
+    "genericError": "Failed to create an account. Please try again."
+  },
+  "header": {
+    "title": "Vibe",
+    "searchPlaceholder": "Search",
+    "noResults": "No results found.",
+    "following": "Following",
+    "follow": "Follow",
+    "requested": "Requested",
+    "notifications": "Notifications",
+    "noActivity": "No new activity.",
+    "profile": "Profile",
+    "createPost": "Create Post",
+    "logOut": "Log Out",
+    "cancel": "Cancel",
+    "messages": "Direct",
+    "followNotification": "{username} started following you.",
+    "messageNotification": "{username} sent you a message.",
+    "followRequestNotification": "{username} wants to follow you.",
+    "mentionCommentNotification": "{username} mentioned you in a comment: \"{commentText}\"",
+    "duoRequestNotification": "<b>{username}</b> wants to create a duo photo with you.",
+    "duoAcceptedNotification": "<b>{username}</b> accepted your duo photo request.",
+    "duoRefusedNotification": "<b>{username}</b> refused your duo photo request.",
+    "accept": "Accept",
+    "decline": "Decline"
+  },
+  "feed": {
+    "welcome": "Welcome to Vibe",
+    "empty": "It looks like your feed is empty.",
+    "emptySuggestion": "Use the search bar to find and follow your friends to see their photos and videos."
+  },
+  "post": {
+    "like": "Like",
+    "comment": "Comment",
+    "forward": "Forward",
+    "moreOptions": "More options",
+    "delete": "Delete",
+    "likes": "likes",
+    "viewAllComments": "View all {count} comments",
+    "addComment": "Add a comment...",
+    "postButton": "Post",
+    "mentionSearching": "Searching...",
+    "mentionNoUsers": "No users found.",
+    "deleteCommentTitle": "Delete Comment?",
+    "deleteCommentBody": "Are you sure you want to delete this comment?",
+    "deletePostTitle": "Delete Post?",
+    "deletePostBody": "Are you sure you want to delete this post?",
+    "deleting": "Deleting...",
+    "viewSingular": "view",
+    "viewPlural": "views",
+    "viewedBy": "Viewed by",
+    "noViews": "No views yet.",
+    "duoPhoto": "Duo Photo",
+    "and": "and",
+    "addCaption": "Add Caption",
+    "addMusic": "Add Music",
+    "addToMemory": "Add to Memory"
+  },
+  "time": {
+    "seconds": "{count}s ago",
+    "minutes": "{count}m ago",
+    "hours": "{count}h ago",
+    "days": "{count}d ago"
+  },
+  "profile": {
+    "editProfile": "Edit Profile",
+    "following": "Following",
+    "follow": "Follow",
+    "message": "Message",
+    "posts": "posts",
+    "followers": "followers",
+    "followingCount": "following",
+    "postsTab": "POSTS",
+    "pulsesTab": "PULSES",
+    "noPosts": "No Posts Yet",
+    "noPostsSuggestion": "When this user shares photos, you'll see them here.",
+    "noPulses": "No Pulses Yet",
+    "noPulsesSuggestion": "This user hasn't shared any pulses.",
+    "privateAccountMessage": "This Account is Private",
+    "privateAccountSuggestion": "Follow to see their photos and videos.",
+    "notFound": "User not found.",
+    "followersModalTitle": "Followers",
+    "followingModalTitle": "Following",
+    "noFollowers": "No followers yet.",
+    "notFollowingAnyone": "Not following anyone."
+  },
+  "editProfile": {
+    "title": "Edit Profile",
+    "changePhoto": "Change profile photo",
+    "usernameLabel": "Username",
+    "bioLabel": "Bio",
+    "privateAccount": "Private Account",
+    "privateAccountInfo": "Only your followers will be able to see your photos and videos.",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "updateError": "Failed to update profile. Please try again.",
+    "profileMusic": "Profile Music",
+    "noProfileMusic": "No music selected.",
+    "changeMusic": "Change music",
+    "removeMusic": "Remove"
+  },
+  "createPost": {
+    "title": "Create new post",
+    "share": "Share",
+    "sharing": "Sharing...",
+    "captionLabel": "Write a caption...",
+    "dragPhotos": "Drag photos here",
+    "selectFromComputer": "Select from computer",
+    "ventMode": "Vent Mode",
+    "ventModeInfo": "Only selected followers will see this post.",
+    "searchFollowers": "Search followers...",
+    "noFollowersFound": "No followers found.",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+    "selectedCount": "{count} selected",
+    "addMusic": "Add Music",
+    "changeMusic": "Change Music",
+    "searchMusicPlaceholder": "Search for a song or artist...",
+    "search": "Search",
+    "searching": "Searching...",
+    "musicNoResults": "No songs found.",
+    "selectMusic": "Select"
+  },
+  "messages": {
+    "title": "Messages",
+    "newMessage": "New message",
+    "close": "Close messages",
+    "loading": "Loading conversations...",
+    "noConversations": "No conversations yet.",
+    "back": "Back to conversations",
+    "yourMessages": "Your Messages",
+    "sendPrivate": "Send private photos and messages to a friend.",
+    "seen": "Seen",
+    "recording": "Recording...",
+    "replyingToSelf": "Replying to yourself",
+    "replyingToOther": "Replying to {username}",
+    "messagePlaceholder": "Message...",
+    "send": "Send",
+    "deleteTitle": "Delete Message?",
+    "deleteBody": "Are you sure you want to delete this message? This cannot be undone.",
+    "newMessageTitle": "New Message",
+    "searchUsers": "Search for users...",
+    "media": {
+      "photo": "Photo",
+      "video": "Video",
+      "audio": "Voice message",
+      "select": "Attach media",
+      "uploadError": "Failed to upload media.",
+      "videoTooLong": "Video cannot be longer than 30 seconds.",
+      "cancelUpload": "Cancel upload",
+      "viewMedia": "View media"
+    },
+    "forwardedPost": "Forwarded a post",
+    "anonymousModeOn": "Go anonymous",
+    "anonymousModeOff": "Go online",
+    "deleteConversationTitle": "Delete Conversation?",
+    "deleteConversationBody": "This will permanently delete the conversation for everyone and cannot be undone.",
+    "deleteConversationConfirm": "Delete",
+    "recordingError": "Could not start recording. Please check microphone permissions.",
+    "diariesTitle": "Notes",
+    "addNote": "Your Note",
+    "replyToNote": "Reply to {username}'s note...",
+    "notePlaceholder": "Your note...",
+    "viewNote": "View note"
+  },
+  "diary": {
+    "title": "Diary",
+    "publish": "Publish",
+    "publishing": "Publishing...",
+    "placeholder": "What's on your mind today?",
+    "empty": "The diary is empty.",
+    "emptySuggestion": "Follow people to see their diary entries here or write your own!",
+    "alreadyPosted": "You've already posted in your diary today. Come back tomorrow!"
+  },
+  "forwardModal": {
+    "title": "Forward to",
+    "search": "Search...",
+    "noFollowing": "You aren't following anyone.",
+    "noResults": "No users found.",
+    "send": "Send",
+    "sending": "Sending...",
+    "sent": "Sent"
+  },
+  "duoModal": {
+    "title": "Create Duo Photo",
+    "description": "Select a friend to share this post with. They will receive a request to accept.",
+    "sendRequest": "Send Request",
+    "sending": "Sending...",
+    "noFollowing": "You aren't following anyone to invite.",
+    "requestSent": "Request sent!",
+    "alreadyPartnered": "This post already has a duo partner.",
+    "requestPending": "There is already a pending request for this post.",
+    "requestError": "Failed to send request."
+  },
+  "crystal": {
+    "formed": "A new Connection Crystal was formed!",
+    "glowing": "Your connection is glowing!",
+    "level": {
+        "brilhante": "Brilliant",
+        "equilibrado": "Balanced",
+        "apagado": "Faded",
+        "rachado": "Cracked"
+    },
+    "title": "Connection Crystal: {status}",
+    "streak": "{streak} day interaction streak",
+    "shareTitle": "Connection Streak",
+    "shareAction": "Share to Pulse",
+    "publishing": "Publishing...",
+    "shareError": "Failed to publish Pulse.",
+    "canvasError": "Failed to generate image.",
+    "imageLoadError": "Failed to load profile pictures.",
+    "streakDays": "{streak} day connection streak",
+    "vibe": "— the vibe continues 💬🔥 —",
+    "watermark": "Vibe"
+  },
+  "createPulse": {
+    "title": "Create new pulse",
+    "publishing": "Publishing...",
+    "publish": "Publish Pulse",
+    "captionLabel": "Write a caption... (optional)",
+    "selectMedia": "Select an image or video",
+    "selectFromComputer": "Select from computer",
+    "invalidFileError": "Please select a valid image or video file.",
+    "publishError": "Failed to create pulse. Please try again.",
+    "ventMode": "Vent Mode",
+    "ventModeInfo": "Only selected followers will see this pulse."
+  },
+  "pulseViewer": {
+    "previous": "Previous pulse",
+    "next": "Next pulse",
+    "delete": "Delete Pulse",
+    "deleteTitle": "Delete Pulse?",
+    "deleteBody": "Are you sure you want to delete this pulse? This cannot be undone."
+  },
+  "pulseBar": {
+    "viewPulse": "View {username}'s pulse"
+  },
+  "welcome": {
+    "title": "Welcome to Vibe"
+  },
+  "footer": {
+    "language": "English",
+    "copyright": "© {year} Vibe",
+    "links": {
+      "meta": "Meta",
+      "about": "About",
+      "blog": "Blog",
+      "jobs": "Jobs",
+      "help": "Help",
+      "api": "API",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "locations": "Locations",
+      "lite": "Instagram Lite",
+      "threads": "Threads",
+      "contact": "Contact Uploading & Non-Users",
+      "verified": "Meta Verified"
+    }
+  },
+  "call": {
+    "call": "Call",
+    "calling": "Calling {username}...",
+    "incomingCall": "Incoming call from {username}",
+    "answer": "Answer",
+    "decline": "Decline",
+    "hangUp": "Hang Up",
+    "callEnded": "Call ended",
+    "callDeclined": "{username} declined the call.",
+    "callCancelled": "Call cancelled.",
+    "onCallWith": "On call with {username}",
+    "enterCallId": "Enter Call ID to join",
+    "join": "Join",
+    "callId": "Call ID",
+    "copyCallId": "Copy ID",
+    "copied": "Copied!",
+    "callInProgress": "Call in progress...",
+    "noMicrophone": "Microphone access denied. Please enable it in your browser settings.",
+    "callError": "An error occurred during the call.",
+    "videoCall": "Video Call",
+    "voiceCall": "Voice Call"
+  },
+  "resetPassword": {
+    "title": "Reset Password",
+    "instructions": "Enter your email and we'll send you a link to get back into your account.",
+    "emailLabel": "Email address",
+    "sendLinkButton": "Send Reset Link",
+    "sendingLinkButton": "Sending...",
+    "backToLogin": "Back to Login",
+    "successMessage": "Check your email for a link to reset your password.",
+    "errorNotFound": "Email not found. Please check and try again.",
+    "genericError": "Failed to send reset link. Please try again later."
+  },
+  "addCaptionModal": {
+    "title": "Add Caption",
+    "captionLabel": "Write a caption...",
+    "save": "Save",
+    "saving": "Saving...",
+    "error": "Failed to save caption. Please try again."
+  },
+  "addMusicModal": {
+    "title": "Add Music"
+  },
+  "musicSearch": {
+    "fetchError": "Failed to fetch music",
+    "searchError": "An error occurred during search.",
+    "trimInstructions": "Drag to select the 15-second snippet.",
+    "done": "Done"
+  },
+  "musicPlayer": {
+    "play": "Play",
+    "pause": "Pause"
+  },
+  "memories": {
+    "new": "New",
+    "add": "Add",
+    "title": "Memories",
+    "edit": "Edit Memory",
+    "delete": "Delete Memory",
+    "deleteConfirm": "Are you sure you want to delete this memory? This cannot be undone.",
+    "selectContent": "Select Content",
+    "next": "Next",
+    "name": "Name",
+    "editCover": "Edit Cover",
+    "create": "Create",
+    "save": "Save",
+    "selectItems": "Select the posts and pulses you want to add.",
+    "noContent": "You have no posts or pulses to add.",
+    "memoryName": "Memory Name",
+    "selectCover": "Select a cover",
+    "creating": "Creating...",
+    "saving": "Saving...",
+    "error": "An error occurred. Please try again.",
+    "addToMemoryTitle": "Add to Memory",
+    "createNew": "Create New Memory",
+    "added": "Added!"
+  }
+};
 
-// Set 'pt-BR' as the language.
-type Language = 'pt-BR';
+type Language = 'pt' | 'en';
 
 interface LanguageContextType {
   language: Language;
-  // Keep setLanguage as a no-op function for components that might still call it, to avoid crashes.
   setLanguage: (language: Language) => void;
   t: (key: string, replacements?: { [key: string]: string | number }) => string;
-  loading: boolean;
+  loading: boolean; // Keep for compatibility, but always false
 }
+
+const messages: Record<Language, any> = {
+    pt: ptMessages,
+    en: enMessages,
+};
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Hardcode the language to Brazilian Portuguese.
-  const language: Language = 'pt-BR';
+  const [language, setLanguage] = useState<Language>('pt');
 
-  // This function does nothing, as the language is fixed.
-  const setLanguage = (lang: Language) => {};
-
-  const t = (key: string, replacements?: { [key:string]: string | number }): string => {
-    let message = key.split('.').reduce((o, i) => (o ? o[i] : undefined), messages as Record<string, any>) || key;
+  const t = (key: string, replacements?: { [key: string]: string | number }): string => {
+    const langMessages = messages[language];
+    if (!langMessages) return key;
+    
+    let message = key.split('.').reduce((o, i) => (o ? o[i] : undefined), langMessages) || key;
     if (replacements && typeof message === 'string') {
       Object.keys(replacements).forEach(placeholder => {
         message = message.replace(`{${placeholder}}`, String(replacements[placeholder]));
@@ -386,7 +785,6 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   return (
-    // Loading state is no longer needed as the import is synchronous.
     <LanguageContext.Provider value={{ language, setLanguage, t, loading: false }}>
       {children}
     </LanguageContext.Provider>

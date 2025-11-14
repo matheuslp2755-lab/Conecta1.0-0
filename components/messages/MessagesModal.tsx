@@ -149,8 +149,7 @@ const MessagesModal: React.FC<MessagesModalProps> = ({ isOpen, onClose, initialT
     const [showMusicSearch, setShowMusicSearch] = useState(false);
     const [editingDiary, setEditingDiary] = useState<DiaryEntry | null>(null);
     const [confirmDeleteDiary, setConfirmDeleteDiary] = useState<DiaryEntry | null>(null);
-    // FIX: Cannot find name 'setIsMuted'. Declare isMusicMuted and setIsMuted state variables.
-    const [isMusicMuted, setIsMuted] = useState(false);
+    const [isMusicMuted, setIsMusicMuted] = useState(false);
 
     const currentUser = auth.currentUser;
 
@@ -535,7 +534,7 @@ const MessagesModal: React.FC<MessagesModalProps> = ({ isOpen, onClose, initialT
                         </div>
                         {viewingDiary.musicInfo && (
                             <div className="-mx-2">
-                                <MusicPlayer musicInfo={viewingDiary.musicInfo} isPlaying={true} isMuted={isMusicMuted} setIsMuted={setIsMuted} />
+                                <MusicPlayer musicInfo={viewingDiary.musicInfo} isPlaying={true} isMuted={isMusicMuted} setIsMuted={setIsMusicMuted} />
                             </div>
                         )}
                         <p className="text-xl font-serif text-center whitespace-pre-wrap flex-grow min-h-[100px]">{viewingDiary.text}</p>

@@ -25,7 +25,7 @@ const PauseIcon: React.FC<{className?: string}> = ({ className }) => (
     </svg>
 );
 
-const MAX_DURATION = 15;
+const SNIPPET_DURATION = 15;
 
 const ProfileMusicPlayer: React.FC<ProfileMusicPlayerProps> = ({ musicInfo }) => {
     const { t } = useLanguage();
@@ -42,7 +42,7 @@ const ProfileMusicPlayer: React.FC<ProfileMusicPlayerProps> = ({ musicInfo }) =>
         if (isAudioPlaying) {
             audioRef.current.pause();
         } else {
-            if (audioRef.current.currentTime < startTime || audioRef.current.currentTime >= startTime + MAX_DURATION) {
+            if (audioRef.current.currentTime < startTime || audioRef.current.currentTime >= startTime + SNIPPET_DURATION) {
                 audioRef.current.currentTime = startTime;
             }
             audioRef.current.play().catch(err => console.error("Error playing audio:", err));
@@ -55,45 +55,43 @@ const ProfileMusicPlayer: React.FC<ProfileMusicPlayerProps> = ({ musicInfo }) =>
 
         const startTime = musicInfo.startTime || 0;
 
-        const setAudioTime = () => {
+        const handleTimeUpdate = () => {
             const time = audio.currentTime;
-            if (time >= startTime + MAX_DURATION) {
-                audio.pause();
-                setCurrentTime(startTime + MAX_DURATION);
-            } else {
-                setCurrentTime(time);
+            if (time >= startTime + SNIPPET_DURATION) {
+                audio.currentTime = startTime; // Loop
             }
+            setCurrentTime(time);
         };
 
         const handlePlay = () => setIsAudioPlaying(true);
         const handlePause = () => setIsAudioPlaying(false);
         const handleEnded = () => {
+             // When the 30s preview ends naturally, restart from the desired startTime
             setIsAudioPlaying(false);
             setCurrentTime(startTime);
+            audio.currentTime = startTime;
         };
         
-        audio.addEventListener('timeupdate', setAudioTime);
+        audio.addEventListener('timeupdate', handleTimeUpdate);
         audio.addEventListener('play', handlePlay);
         audio.addEventListener('pause', handlePause);
         audio.addEventListener('ended', handleEnded);
 
+        // Set initial time when component mounts or musicInfo changes
+        audio.currentTime = startTime;
+        setCurrentTime(startTime);
+
         return () => {
-            audio.removeEventListener('timeupdate', setAudioTime);
+            audio.removeEventListener('timeupdate', handleTimeUpdate);
             audio.removeEventListener('play', handlePlay);
             audio.removeEventListener('pause', handlePause);
             audio.removeEventListener('ended', handleEnded);
         };
-    }, [musicInfo.startTime]);
-    
-    // Reset currentTime when musicInfo changes
-    useEffect(() => {
-        setCurrentTime(musicInfo.startTime || 0);
     }, [musicInfo]);
-
-
+    
     const startTime = musicInfo.startTime || 0;
     const relativeCurrentTime = Math.max(0, currentTime - startTime);
-    const progressPercentage = Math.min(100, (relativeCurrentTime / MAX_DURATION) * 100);
+    const progressPercentage = Math.min(100, (relativeCurrentTime / SNIPPET_DURATION) * 100);
 
     return (
         <div className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 w-full">

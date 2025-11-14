@@ -89,7 +89,8 @@
     "duoPhoto": "Foto em Dupla",
     "and": "e",
     "addCaption": "Adicionar Legenda",
-    "addMusic": "Adicionar Música"
+    "addMusic": "Adicionar Música",
+    "addToMemory": "Adicionar à Lembrança"
   },
   "time": {
     "seconds": "há {count}s",
@@ -348,5 +349,29 @@
   "musicPlayer": {
     "play": "Tocar",
     "pause": "Pausar"
+  },
+   "memories": {
+    "new": "Nova",
+    "add": "Adicionar",
+    "title": "Lembranças",
+    "edit": "Editar Lembrança",
+    "delete": "Excluir Lembrança",
+    "deleteConfirm": "Tem certeza que deseja excluir esta lembrança? Esta ação não pode ser desfeita.",
+    "selectContent": "Selecionar Conteúdo",
+    "next": "Avançar",
+    "name": "Nome",
+    "editCover": "Editar capa",
+    "create": "Criar",
+    "save": "Salvar",
+    "selectItems": "Selecione os posts e pulses que você quer adicionar.",
+    "noContent": "Você não tem posts ou pulses para adicionar.",
+    "memoryName": "Nome da Lembrança",
+    "selectCover": "Selecione uma capa",
+    "creating": "Criando...",
+    "saving": "Salvando...",
+    "error": "Ocorreu um erro. Tente novamente.",
+    "addToMemoryTitle": "Adicionar à Lembrança",
+    "createNew": "Criar nova Lembrança",
+    "added": "Adicionado!"
   }
 }
