@@ -70,8 +70,9 @@ const GalleryModal: React.FC<GalleryModalProps> = ({ isOpen, onClose, onImageSel
         if (e.target.files) {
             const files = Array.from(e.target.files);
             const imagePromises = files
-                .filter(file => file.type.startsWith('image/'))
-                .map(file => {
+                // FIX: Explicitly type 'file' as File to resolve type inference issue.
+                .filter((file: File) => file.type.startsWith('image/'))
+                .map((file: File) => {
                     return new Promise<GalleryImage>((resolve) => {
                         const reader = new FileReader();
                         reader.onload = (event) => {

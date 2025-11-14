@@ -542,6 +542,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, isCurre
     const handleStartRecording = async () => {
         if (isRecording) return;
         try {
+            console.log("Requesting microphone permission for voice message.");
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaRecorderRef.current = new MediaRecorder(stream);
             audioChunksRef.current = [];
