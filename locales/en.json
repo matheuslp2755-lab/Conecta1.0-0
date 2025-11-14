@@ -192,7 +192,7 @@
     "deleteConversationTitle": "Delete Conversation?",
     "deleteConversationBody": "This will permanently delete the conversation for everyone and cannot be undone.",
     "deleteConversationConfirm": "Delete",
-    "recordingError": "Could not start recording. Please check microphone permissions.",
+    "recordingError": "Could not start recording. Please check microphone permissions in your device's settings.",
     "diariesTitle": "Notes",
     "addNote": "Your Note",
     "replyToNote": "Reply to {username}'s note...",
@@ -310,7 +310,7 @@
     "copyCallId": "Copy ID",
     "copied": "Copied!",
     "callInProgress": "Call in progress...",
-    "noMicrophone": "Microphone access denied. Please enable it in your browser settings.",
+    "noMicrophone": "Microphone access denied. Please enable microphone permissions for Vibe in your device's settings.",
     "callError": "An error occurred during the call.",
     "videoCall": "Video Call",
     "voiceCall": "Voice Call"

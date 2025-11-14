@@ -193,7 +193,7 @@
     "deleteConversationTitle": "Excluir Conversa?",
     "deleteConversationBody": "Isso excluirá permanentemente a conversa para todos e não poderá ser desfeito.",
     "deleteConversationConfirm": "Excluir",
-    "recordingError": "Não foi possível iniciar a gravação. Verifique as permissões do microfone.",
+    "recordingError": "Não foi possível iniciar a gravação. Verifique as permissões do microfone nas configurações do seu dispositivo.",
     "diariesTitle": "Notas",
     "addNote": "Sua Nota",
     "replyToNote": "Responder à nota de {username}...",
@@ -315,7 +315,7 @@
     "copyCallId": "Copiar ID",
     "copied": "Copiado!",
     "callInProgress": "Chamada em progresso...",
-    "noMicrophone": "Acesso ao microfone negado. Por favor, habilite nas configurações do seu navegador.",
+    "noMicrophone": "Acesso ao microfone negado. Por favor, ative as permissões de microfone para o Vibe nas configurações do seu dispositivo.",
     "callError": "Ocorreu um erro durante a chamada.",
     "videoCall": "Chamada de Vídeo",
     "voiceCall": "Chamada de Voz"
