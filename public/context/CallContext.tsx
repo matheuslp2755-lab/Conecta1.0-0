@@ -202,6 +202,51 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
             });
             const callId = callDocRef.id;
             console.log("startCall: Created call document in Firestore with ID:", callId);
+
+            // Send Push Notification
+            const sendPushNotification = async () => {
+                try {
+                    if (!receiver || !currentUser) return;
+                    
+                    // INSECURE: This is a client-side implementation for demonstration purposes.
+                    // The OneSignal REST API Key MUST be kept on a secure server and notifications
+                    // should be triggered by a backend function (e.g., Cloud Function) for a production app.
+                    const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY;
+                    if (!ONESIGNAL_REST_API_KEY) {
+                        console.warn("OneSignal REST API Key is not set. Skipping call push notification.");
+                        return;
+                    }
+    
+                    const recipientDocRef = doc(db, 'users', receiver.id);
+                    const recipientDoc = await getDoc(recipientDocRef);
+                    
+                    if (recipientDoc.exists()) {
+                        const recipientData = recipientDoc.data();
+                        if (recipientData.oneSignalPlayerId) {
+                            const message = {
+                                app_id: "d0307e8d-3a9b-4e71-b414-ebc34e40ff4f",
+                                include_player_ids: [recipientData.oneSignalPlayerId],
+                                headings: { "pt": "Vibe" },
+                                contents: { "pt": `Chamada de ${currentUser.displayName}` },
+                                data: { callId: callId }
+                            };
+    
+                            await fetch('https://onesignal.com/api/v1/notifications', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json; charset=utf-8',
+                                    'Authorization': `Basic ${ONESIGNAL_REST_API_KEY}`,
+                                },
+                                body: JSON.stringify(message),
+                            });
+                            console.log("Call push notification sent successfully.");
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error sending call push notification:", error);
+                }
+            };
+            sendPushNotification();
             
             setupPeerConnection(stream, callId, true);
             
