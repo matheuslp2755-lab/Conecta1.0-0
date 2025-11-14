@@ -556,7 +556,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, isCurre
                             const notificationContent = t('messages.media.audio');
 
                             const message = {
-                                app_id: "c5a6a4de-d3bd-4f08-b196-8cae4a5264dc",
+                                app_id: "d0307e8d-3a9b-4e71-b414-ebc34e40ff4f",
                                 include_player_ids: [recipientData.oneSignalPlayerId],
                                 headings: { "pt": `Nova mensagem de ${currentUser.displayName}` },
                                 contents: { "pt": notificationContent },
@@ -760,7 +760,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, isCurre
                             }
     
                             const message = {
-                                app_id: "c5a6a4de-d3bd-4f08-b196-8cae4a5264dc",
+                                app_id: "d0307e8d-3a9b-4e71-b414-ebc34e40ff4f",
                                 include_player_ids: [recipientData.oneSignalPlayerId],
                                 headings: { "pt": `Nova mensagem de ${currentUser.displayName}` },
                                 contents: { "pt": notificationContent },
