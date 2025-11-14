@@ -49,6 +49,7 @@
     "logOut": "Sair",
     "cancel": "Cancelar",
     "messages": "Direct",
+    "gallery": "Galeria",
     "followNotification": "{username} começou a seguir você.",
     "messageNotification": "{username} te enviou uma mensagem.",
     "followRequestNotification": "{username} quer seguir você.",
@@ -373,5 +374,19 @@
     "addToMemoryTitle": "Adicionar à Lembrança",
     "createNew": "Criar nova Lembrança",
     "added": "Adicionado!"
+  },
+  "gallery": {
+    "title": "Nova Publicação",
+    "selectPhotos": "Selecionar da Galeria",
+    "next": "Avançar",
+    "galleryTab": "Galeria",
+    "cameraTab": "Câmera",
+    "capture": "Capturar",
+    "cameraError": "Não foi possível acessar a câmera. Verifique as permissões."
+  },
+  "choiceModal": {
+    "title": "O que você quer criar?",
+    "post": "Publicação",
+    "pulse": "Pulse"
   }
 }

@@ -7,8 +7,47 @@ import CreatePulseModal from './pulse/CreatePulseModal';
 import MessagesModal from './messages/MessagesModal';
 import PulseBar from './feed/PulseBar';
 import PulseViewerModal from './pulse/PulseViewerModal';
+import GalleryModal from './gallery/GalleryModal';
 import { auth, db, collection, query, where, getDocs, doc, getDoc, deleteDoc, storage, storageRef, deleteObject } from '../firebase';
 import { useLanguage } from '../context/LanguageContext';
+import Button from './common/Button';
+
+// New component defined within the same file to avoid creating new files.
+interface PostOrPulseChoiceModalProps {
+    onClose: () => void;
+    onSelectPost: () => void;
+    onSelectPulse: () => void;
+}
+
+const PostOrPulseChoiceModal: React.FC<PostOrPulseChoiceModalProps> = ({ onClose, onSelectPost, onSelectPulse }) => {
+    const { t } = useLanguage();
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50" onClick={onClose}>
+            <div
+                className="bg-white dark:bg-black rounded-lg shadow-xl p-6 w-full max-w-xs text-center border dark:border-zinc-800"
+                onClick={e => e.stopPropagation()}
+            >
+                <h3 className="text-lg font-semibold mb-6">{t('choiceModal.title')}</h3>
+                <div className="flex flex-col gap-3">
+                    <button
+                        onClick={onSelectPost}
+                        className="w-full px-4 py-3 rounded-lg bg-sky-500 hover:bg-sky-600 text-white font-semibold transition-colors"
+                    >
+                        {t('choiceModal.post')}
+                    </button>
+                    <button
+                        onClick={onSelectPulse}
+                        className="w-full px-4 py-3 rounded-lg bg-purple-500 hover:bg-purple-600 text-white font-semibold transition-colors"
+                    >
+                        {t('choiceModal.pulse')}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 const Spinner: React.FC = () => (
     <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-sky-500"></div>
@@ -88,6 +127,11 @@ const Feed: React.FC = () => {
   const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
   const [isCreatePulseModalOpen, setIsCreatePulseModalOpen] = useState(false);
   const [isMessagesModalOpen, setIsMessagesModalOpen] = useState(false);
+  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
+  const [initialImageForPost, setInitialImageForPost] = useState<{ file: File, preview: string } | null>(null);
+  const [initialImageForPulse, setInitialImageForPulse] = useState<{ file: File, preview: string } | null>(null);
+  const [imageForCreation, setImageForCreation] = useState<{ file: File, preview: string } | null>(null);
+  const [showPostOrPulseChoice, setShowPostOrPulseChoice] = useState(false);
   const [initialMessageTarget, setInitialMessageTarget] = useState<{ id: string, username: string, avatar: string } | null>(null);
   const [initialConversationId, setInitialConversationId] = useState<string | null>(null);
   const [playingMusicPostId, setPlayingMusicPostId] = useState<string | null>(null);
@@ -240,6 +284,12 @@ const Feed: React.FC = () => {
     setIsMessagesModalOpen(true);
   }
 
+  const handleImageSelectedFromGallery = (image: { file: File, preview: string }) => {
+    setImageForCreation(image);
+    setIsGalleryModalOpen(false);
+    setShowPostOrPulseChoice(true);
+  };
+
   const handlePostDeleted = (postId: string) => {
     setFeedPosts(currentPosts => currentPosts.filter(p => p.id !== postId));
   };
@@ -296,6 +346,7 @@ const Feed: React.FC = () => {
         onOpenCreatePostModal={() => setIsCreatePostModalOpen(true)}
         onOpenCreatePulseModal={() => setIsCreatePulseModalOpen(true)}
         onOpenMessages={handleOpenMessages}
+        onOpenGallery={() => setIsGalleryModalOpen(true)}
       />
       <main className="pt-20 bg-zinc-50 dark:bg-black min-h-screen">
         {viewingProfileId ? (
@@ -324,25 +375,62 @@ const Feed: React.FC = () => {
           </div>
         )}
       </main>
+      <GalleryModal
+        isOpen={isGalleryModalOpen}
+        onClose={() => setIsGalleryModalOpen(false)}
+        onImageSelected={handleImageSelectedFromGallery}
+      />
       <CreatePostModal
         isOpen={isCreatePostModalOpen}
-        onClose={() => setIsCreatePostModalOpen(false)}
+        onClose={() => {
+            setIsCreatePostModalOpen(false);
+            setInitialImageForPost(null);
+            setImageForCreation(null);
+        }}
         onPostCreated={() => {
             setIsCreatePostModalOpen(false);
+            setInitialImageForPost(null);
+            setImageForCreation(null);
             setFeedKey(prev => prev + 1); // Refreshes the feed
             if(viewingProfileId === auth.currentUser?.uid) {
                 setProfileKey(prev => prev + 1);
             }
         }}
+        initialImage={initialImageForPost}
       />
       <CreatePulseModal
         isOpen={isCreatePulseModalOpen}
-        onClose={() => setIsCreatePulseModalOpen(false)}
+        onClose={() => {
+            setIsCreatePulseModalOpen(false);
+            setInitialImageForPulse(null);
+            setImageForCreation(null);
+        }}
         onPulseCreated={() => {
             setIsCreatePulseModalOpen(false);
+            setInitialImageForPulse(null);
+            setImageForCreation(null);
             setFeedKey(prev => prev + 1); // Also refresh feed to show new pulse
         }}
+        initialImage={initialImageForPulse}
       />
+       {showPostOrPulseChoice && imageForCreation && (
+            <PostOrPulseChoiceModal
+                onClose={() => {
+                    setShowPostOrPulseChoice(false);
+                    setImageForCreation(null);
+                }}
+                onSelectPost={() => {
+                    setInitialImageForPost(imageForCreation);
+                    setIsCreatePostModalOpen(true);
+                    setShowPostOrPulseChoice(false);
+                }}
+                onSelectPulse={() => {
+                    setInitialImageForPulse(imageForCreation);
+                    setIsCreatePulseModalOpen(true);
+                    setShowPostOrPulseChoice(false);
+                }}
+            />
+        )}
       <MessagesModal
         isOpen={isMessagesModalOpen}
         onClose={() => {

@@ -49,6 +49,7 @@
     "logOut": "Log Out",
     "cancel": "Cancel",
     "messages": "Direct",
+    "gallery": "Gallery",
     "followNotification": "{username} started following you.",
     "messageNotification": "{username} sent you a message.",
     "followRequestNotification": "{username} wants to follow you.",
@@ -368,5 +369,19 @@
     "addToMemoryTitle": "Add to Memory",
     "createNew": "Create New Memory",
     "added": "Added!"
+  },
+   "gallery": {
+    "title": "Create new post",
+    "selectPhotos": "Select Photos from Gallery",
+    "next": "Next",
+    "galleryTab": "Gallery",
+    "cameraTab": "Camera",
+    "capture": "Capture",
+    "cameraError": "Could not access camera. Please check permissions."
+  },
+  "choiceModal": {
+    "title": "What do you want to create?",
+    "post": "Post",
+    "pulse": "Pulse"
   }
 }

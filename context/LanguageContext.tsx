@@ -376,6 +376,20 @@ const ptMessages = {
     "addToMemoryTitle": "Adicionar à Lembrança",
     "createNew": "Criar nova Lembrança",
     "added": "Adicionado!"
+  },
+  "gallery": {
+    "title": "Nova Publicação",
+    "selectPhotos": "Selecionar da Galeria",
+    "next": "Avançar",
+    "galleryTab": "Galeria",
+    "cameraTab": "Câmera",
+    "capture": "Capturar",
+    "cameraError": "Não foi possível acessar a câmera. Verifique as permissões."
+  },
+  "choiceModal": {
+    "title": "O que você quer criar?",
+    "post": "Publicação",
+    "pulse": "Pulse"
   }
 };
 
@@ -749,6 +763,20 @@ const enMessages = {
     "addToMemoryTitle": "Add to Memory",
     "createNew": "Create New Memory",
     "added": "Added!"
+  },
+  "gallery": {
+    "title": "Create new post",
+    "selectPhotos": "Select Photos from Gallery",
+    "next": "Next",
+    "galleryTab": "Gallery",
+    "cameraTab": "Camera",
+    "capture": "Capture",
+    "cameraError": "Could not access camera. Please check permissions."
+  },
+  "choiceModal": {
+    "title": "What do you want to create?",
+    "post": "Post",
+    "pulse": "Pulse"
   }
 };
 
