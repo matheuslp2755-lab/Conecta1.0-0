@@ -38,19 +38,48 @@ const AppContent: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Request microphone permission on app load to ensure it's available for calls.
-    // This avoids prompting the user for permission in the middle of starting a call.
-    navigator.mediaDevices.getUserMedia({ audio: true })
-      .then(stream => {
-        // Permission granted. We don't need to use the stream now, so we can stop it.
-        stream.getTracks().forEach(track => track.stop());
-      })
-      .catch(err => {
-        // User denied permission or an error occurred.
-        // Log this for debugging, but don't show an error to the user.
-        // The app will function normally, but calling features will fail if attempted.
-        console.warn("Microphone permission was not granted on load:", err.message);
-      });
+    const requestMicrophonePermission = async () => {
+      // Check if the Permissions API is supported for a more robust request flow.
+      if (navigator.permissions && typeof navigator.permissions.query === 'function') {
+        try {
+          // Check for permission status first.
+          const permissionStatus = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+          
+          // Only prompt if the user hasn't made a decision yet ('prompt' state).
+          // This avoids repeatedly asking a user who has already denied permission.
+          if (permissionStatus.state === 'prompt') {
+            console.log("Microphone permission state is 'prompt'. Requesting access on app load.");
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            // Permission granted. Stop the track as we don't need to use the stream now.
+            stream.getTracks().forEach(track => track.stop());
+            console.log("Microphone permission granted on load.");
+          } else {
+              console.log(`Microphone permission status is '${permissionStatus.state}'. No prompt will be shown on load.`);
+          }
+  
+          // Listen for future changes in permission status.
+          permissionStatus.onchange = () => {
+            console.log(`Microphone permission status changed to: ${permissionStatus.state}`);
+          };
+  
+        } catch (err: any) {
+          console.warn("Could not query microphone permission on load:", err.message);
+        }
+      } else {
+        // Fallback for environments without the Permissions API.
+        console.warn("Permissions API not supported. Falling back to direct getUserMedia request on load.");
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+                stream.getTracks().forEach(track => track.stop());
+            })
+            .catch(err => {
+                // This might fail silently in some webviews if permissions aren't configured correctly.
+                console.warn("Direct getUserMedia request on load failed:", err.message);
+            });
+      }
+    };
+
+    requestMicrophonePermission();
   }, []); // The empty dependency array ensures this runs only once when the component mounts.
 
   useEffect(() => {
