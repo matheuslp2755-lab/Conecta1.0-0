@@ -38,6 +38,22 @@ const AppContent: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // Request microphone permission on app load to ensure it's available for calls.
+    // This avoids prompting the user for permission in the middle of starting a call.
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        // Permission granted. We don't need to use the stream now, so we can stop it.
+        stream.getTracks().forEach(track => track.stop());
+      })
+      .catch(err => {
+        // User denied permission or an error occurred.
+        // Log this for debugging, but don't show an error to the user.
+        // The app will function normally, but calling features will fail if attempted.
+        console.warn("Microphone permission was not granted on load:", err.message);
+      });
+  }, []); // The empty dependency array ensures this runs only once when the component mounts.
+
+  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser && !prevUser.current) {
         setToastMessage(`Seja bem-vindo(a) ao Vibe`);
