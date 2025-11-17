@@ -22,7 +22,8 @@ const ptMessages = {
     "getTheApp": "Obtenha o aplicativo.",
     "error": "Falha ao entrar. Verifique seu e-mail e senha.",
     "appStoreAlt": "Baixar na App Store",
-    "googlePlayAlt": "Disponível no Google Play"
+    "googlePlayAlt": "Disponível no Google Play",
+    "installHere": "Instale aqui"
   },
   "signup": {
     "title": "Vibe",
@@ -317,7 +318,7 @@ const ptMessages = {
     "copyCallId": "Copiar ID",
     "copied": "Copiado!",
     "callInProgress": "Chamada em progresso...",
-    "noMicrophone": "Acesso ao microfone negado. Por favor, habilite nas configurações do seu navegador.",
+    "noMicrophone": "Acesso ao microfone negado. Por favor, ative as permissões de microfone para o Vibe nas configurações do seu dispositivo.",
     "callError": "Ocorreu um erro durante a chamada.",
     "videoCall": "Chamada de Vídeo",
     "voiceCall": "Chamada de Voz"
@@ -414,7 +415,8 @@ const enMessages = {
     "getTheApp": "Get the app.",
     "error": "Failed to log in. Please check your email and password.",
     "appStoreAlt": "Download on the App Store",
-    "googlePlayAlt": "Get it on Google Play"
+    "googlePlayAlt": "Get it on Google Play",
+    "installHere": "Install here"
   },
   "signup": {
     "title": "Vibe",

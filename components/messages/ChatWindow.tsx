@@ -335,7 +335,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, isCurre
 
             const settlingTimer = setTimeout(() => {
                 setAnimationState('settling');
-            }, 4000); // Wait 4s before moving
+            }, 3000); // Wait 3s before moving
 
             return () => {
                 clearTimeout(settlingTimer);

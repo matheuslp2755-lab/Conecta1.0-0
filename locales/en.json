@@ -18,8 +18,7 @@
     "signUpLink": "Sign up",
     "getTheApp": "Get the app.",
     "error": "Failed to log in. Please check your email and password.",
-    "appStoreAlt": "Download on the App Store",
-    "googlePlayAlt": "Get it on Google Play"
+    "installHere": "Install here"
   },
   "signup": {
     "title": "Vibe",

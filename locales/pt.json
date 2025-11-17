@@ -18,8 +18,7 @@
     "signUpLink": "Cadastre-se",
     "getTheApp": "Obtenha o aplicativo.",
     "error": "Falha ao entrar. Verifique seu e-mail e senha.",
-    "appStoreAlt": "Baixar na App Store",
-    "googlePlayAlt": "Disponível no Google Play"
+    "installHere": "Instale aqui"
   },
   "signup": {
     "title": "Vibe",

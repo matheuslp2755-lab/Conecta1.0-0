@@ -177,6 +177,15 @@ const Login: React.FC<LoginProps> = ({ onSwitchMode }) => {
             </button>
           </p>
         </div>
+        
+        <div className="text-center py-4">
+          <p className="text-sm mb-4">{t('login.getTheApp')}</p>
+          <div className="flex justify-center gap-4">
+            <a href="https://www.mediafire.com/file/g4z89j1vqr7aktw/Vibe.apk/file" target="_blank" rel="noopener noreferrer" className="font-semibold text-sky-500 hover:text-sky-600">
+              {t('login.installHere')}
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   );
