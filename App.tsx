@@ -39,43 +39,26 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     const requestMicrophonePermission = async () => {
-      // Check if the Permissions API is supported for a more robust request flow.
-      if (navigator.permissions && typeof navigator.permissions.query === 'function') {
-        try {
-          // Check for permission status first.
-          const permissionStatus = await navigator.permissions.query({ name: 'microphone' as PermissionName });
-          
-          // Only prompt if the user hasn't made a decision yet ('prompt' state).
-          // This avoids repeatedly asking a user who has already denied permission.
-          if (permissionStatus.state === 'prompt') {
-            console.log("Microphone permission state is 'prompt'. Requesting access on app load.");
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            // Permission granted. Stop the track as we don't need to use the stream now.
-            stream.getTracks().forEach(track => track.stop());
-            console.log("Microphone permission granted on load.");
-          } else {
-              console.log(`Microphone permission status is '${permissionStatus.state}'. No prompt will be shown on load.`);
-          }
-  
-          // Listen for future changes in permission status.
-          permissionStatus.onchange = () => {
-            console.log(`Microphone permission status changed to: ${permissionStatus.state}`);
-          };
-  
-        } catch (err: any) {
-          console.warn("Could not query microphone permission on load:", err.message);
+      try {
+        // Directly requesting microphone access. This will trigger a prompt if the user 
+        // hasn't made a choice yet. If permission was already granted, it will succeed 
+        // without a prompt. If it was denied, it will fail.
+        console.log("Attempting to get microphone permissions on app load...");
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        // If we get here, permission is granted. We don't need to use the stream
+        // right now, so we can stop the tracks to release the microphone.
+        stream.getTracks().forEach(track => track.stop());
+        console.log("Microphone permission is available.");
+      } catch (err: any) {
+        // Handle cases where the user denies permission or no microphone is available.
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          console.warn("Microphone access was denied by the user. Some features may not work.");
+        } else if (err.name === 'NotFoundError') {
+            console.warn("No microphone was found on this device.");
+        } else {
+          console.error("An error occurred while requesting microphone permission:", err);
         }
-      } else {
-        // Fallback for environments without the Permissions API.
-        console.warn("Permissions API not supported. Falling back to direct getUserMedia request on load.");
-        navigator.mediaDevices.getUserMedia({ audio: true })
-            .then(stream => {
-                stream.getTracks().forEach(track => track.stop());
-            })
-            .catch(err => {
-                // This might fail silently in some webviews if permissions aren't configured correctly.
-                console.warn("Direct getUserMedia request on load failed:", err.message);
-            });
       }
     };
 
